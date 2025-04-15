@@ -10,7 +10,7 @@ Java_com_henrythasler_sheetmusic_MainActivity_stringFromJNI(
         jobject /* this */) {
     vrv::Toolkit tk(false);
     __android_log_print(ANDROID_LOG_INFO, "Verovio", "%s", "test");
-    std::string hello = "Hello from Verovio " + tk.GetVersion();
+    std::string hello = "Verovio " + tk.GetVersion();
 //    std::string hello = "Hello from C++";
     return env->NewStringUTF(hello.c_str());
 }
