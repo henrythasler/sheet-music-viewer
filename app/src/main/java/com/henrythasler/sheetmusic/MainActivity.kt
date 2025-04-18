@@ -18,24 +18,13 @@ class MainActivity : ComponentActivity() {
             MyApplicationTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     MainScreen(
-                        name = stringFromJNI(),
-                        modifier = Modifier.padding(innerPadding)
+//                        name = stringFromJNI(),
+                        modifier = Modifier.padding(innerPadding),
+                        viewModel = VerovioViewModel(),
+//                        svgSource = RenderData(),
                     )
                 }
             }
-        }
-    }
-
-    /**
-     * A native method that is implemented by the 'sheetmusic' native library,
-     * which is packaged with this application.
-     */
-    external fun stringFromJNI(): String
-
-    companion object {
-        // Used to load the 'sheetmusic' library on application startup.
-        init {
-            System.loadLibrary("sheetmusic")
         }
     }
 }

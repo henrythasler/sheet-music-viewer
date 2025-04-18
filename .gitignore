@@ -33,3 +33,4 @@ google-services.json
 *.hprof
 
 app/src/main/cpp/verovio
+app/src/main/assets/data
