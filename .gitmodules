@@ -1,0 +1,4 @@
+[submodule "app/src/main/cpp/verovio"]
+	path = app/src/main/cpp/verovio
+	url = https://github.com/rism-digital/verovio.git
+	branch = develop

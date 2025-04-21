@@ -32,5 +32,4 @@ google-services.json
 # Android Profiling
 *.hprof
 
-app/src/main/cpp/verovio
 app/src/main/assets/data
