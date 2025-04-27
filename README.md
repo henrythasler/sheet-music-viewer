@@ -7,4 +7,5 @@ Show [MEI](https://music-encoding.org/about/)- or MusicXML-Files rendered with [
 1. Install [Ninja](https://ninja-build.org/) : `sudo apt install ninja-build`
 2. Clone Verovio library submodule: `git submodule update --init`
 3. Generate git-commit header: `(cd app/src/main/cpp/verovio/tools && ./get_git_commit.sh)`
-4. Open and build with Android Studio
+4. Copy verovio-data assets to app assets folder: `cp -r app/src/main/cpp/verovio/data/ app/src/main/assets/`
+5. Open and build with Android Studio
