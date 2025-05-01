@@ -41,7 +41,7 @@ class VerovioViewModel : ViewModel() {
             if (!path.isNullOrEmpty()) {
                 Log.i("VerovioViewModel", "using path '$path'")
                 _svgData.value = renderData(path.toString())
-//                Log.i("VerovioViewModel", "SVG: '${_svgData.value}'")
+//                Log.d("VerovioViewModel", "SVG: '${_svgData.value}'")
             } else {
                 Log.e("VerovioViewModel", "Path is invalid")
             }

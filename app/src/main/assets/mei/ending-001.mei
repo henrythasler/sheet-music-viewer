@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-model href="https://music-encoding.org/schema/5.1/mei-all.rng" type="application/xml" schematypens="http://relaxng.org/ns/structure/1.0"?>
+<?xml-model href="https://music-encoding.org/schema/5.1/mei-all.rng" type="application/xml" schematypens="http://purl.oclc.org/dsdl/schematron"?>
+<mei xmlns="http://www.music-encoding.org/ns/mei" meiversion="5.1">
+   <meiHead>
+      <fileDesc>
+         <titleStmt>
+            <title>Ending example</title>
+         </titleStmt>
+         <pubStmt>
+            <date isodate="2017-05-04">2017-05-04</date>
+         </pubStmt>
+         <notesStmt>
+            <annot>Verovio supports "ending" elements. Consecutive endings are aligned horizontally. By default, Verovio renders endings on top of
+					each staff group.</annot>
+         </notesStmt>
+      </fileDesc>
+      <encodingDesc>
+         <appInfo>
+            <application version="2.0.0" label="2">
+               <name>Verovio</name>
+            </application>
+         </appInfo>
+      </encodingDesc>
+   </meiHead>
+   <music>
+      <body>
+         <mdiv xml:id="aoqsi69">
+            <score xml:id="mjft1g2">
+               <scoreDef xml:id="u168fb37" midi.bpm="92">
+                  <staffGrp xml:id="ufnjo7e">
+                     <staffDef xml:id="mmlovzj" n="1" lines="5" clef.shape="G" clef.line="2" keysig="0" meter.count="2" meter.unit="4" />
+                     <staffGrp xml:id="x6ug31v" symbol="brace">
+                        <staffDef xml:id="m1k4iy3e" n="2" lines="5" clef.shape="G" clef.line="2" keysig="0" meter.count="2" meter.unit="4" />
+                        <staffDef xml:id="w1q84ocf" n="3" lines="5" clef.shape="F" clef.line="4" keysig="0" meter.count="2" meter.unit="4" />
+                     </staffGrp>
+                  </staffGrp>
+               </scoreDef>
+               <section xml:id="a1cybpcc">
+                  <measure xml:id="h15wwqth">
+                     <staff xml:id="t14xmp24" n="1">
+                        <layer xml:id="bju2rxn" n="1">
+                           <note xml:id="note-0000000827838925" dur="8" oct="4" pname="b" accid.ges="n">
+                              <verse xml:id="c1d0qcvg" n="1">
+                                 <syl xml:id="oeeh8fz">er</syl>
+                              </verse>
+                           </note>
+                           <note xml:id="note-0000000202958571" dur="8" oct="4" pname="g" accid.ges="n">
+                              <verse xml:id="zk6xyvl" n="1">
+                                 <syl xml:id="hhghzyb">im</syl>
+                              </verse>
+                           </note>
+                           <note xml:id="note-0000000388247011" dur="8" oct="4" pname="a" accid.ges="n">
+                              <verse xml:id="s1bb0tuc" n="1">
+                                 <syl xml:id="k6sh6uc" con="d" wordpos="i">gan</syl>
+                              </verse>
+                           </note>
+                           <note xml:id="note-0000001039386541" dur="8" oct="4" pname="b" accid.ges="n">
+                              <verse xml:id="rfx25hn" n="1">
+                                 <syl xml:id="q3ie8ud" wordpos="t">ze</syl>
+                              </verse>
+                           </note>
+                        </layer>
+                     </staff>
+                     <staff xml:id="y1kyp1ws" n="2">
+                        <layer xml:id="j1eyoooy" n="1">
+                           <rest xml:id="awtw03u" dur="8" />
+                           <beam xml:id="d12ecyql">
+                              <chord xml:id="tjwwkjn" dur="8">
+                                 <note xml:id="mzub3xf" oct="3" pname="b" accid.ges="n" />
+                                 <note xml:id="a14qhuvu" oct="4" pname="d" accid.ges="n" />
+                                 <note xml:id="ecz237t" oct="4" pname="g" accid.ges="n" />
+                              </chord>
+                              <rest xml:id="gdvl5ld" dur="8" />
+                              <chord xml:id="i1nwbnw5" dur="8">
+                                 <note xml:id="n1r78e3w" oct="4" pname="d" accid.ges="n" />
+                                 <note xml:id="i1y47wy7" oct="4" pname="f" accid.ges="n" />
+                                 <note xml:id="ameaduc" oct="4" pname="g" accid.ges="n" />
+                              </chord>
+                           </beam>
+                        </layer>
+                     </staff>
+                     <staff xml:id="b1bpmbr1" n="3">
+                        <layer xml:id="n1m11mph" n="1">
+                           <beam xml:id="c1oxd4nf">
+                              <note xml:id="b23h8om" dur="8" oct="3" pname="g" accid.ges="n" />
+                              <rest xml:id="y1n0fw13" dur="8" />
+                              <note xml:id="v13viyd2" dur="8" oct="2" pname="g" accid.ges="n" />
+                           </beam>
+                           <rest xml:id="d1sqgsul" dur="8" />
+                        </layer>
+                     </staff>
+                  </measure>
+                  <ending xml:id="r11rutd2" n="1">
+                     <measure xml:id="jwigvp2" right="rptend" n="13">
+                        <staff xml:id="h1hn97h8" n="1">
+                           <layer xml:id="rmwmthe" n="1">
+                              <beam xml:id="h14fmeoc">
+                                 <note xml:id="note-0000000982553029" dots="1" dur="8" oct="5" pname="c" accid.ges="n">
+                                    <verse xml:id="y1ajik95" n="1">
+                                       <syl xml:id="i6oscn4">Haus;</syl>
+                                    </verse>
+                                 </note>
+                                 <note xml:id="j19obtds" dur="16" oct="5" pname="d" accid.ges="n" />
+                                 <note xml:id="rvzjjlx" dur="8" oct="5" pname="e" accid.ges="n" />
+                              </beam>
+                              <note xml:id="note-0000000308328340" dur="8" oct="4" pname="g" accid.ges="n">
+                                 <verse xml:id="ffjak8c" n="1">
+                                    <syl xml:id="f16zdwlv">do</syl>
+                                 </verse>
+                              </note>
+                           </layer>
+                        </staff>
+                        <staff xml:id="dqn9gl2" n="2">
+                           <layer xml:id="eoma0gm" n="1">
+                              <rest xml:id="n1a2rmes" dur="8" />
+                              <beam xml:id="d4vs11m">
+                                 <chord xml:id="o1s8kxne" dur="8">
+                                    <note xml:id="n19a056m" oct="4" pname="c" accid.ges="n" />
+                                    <note xml:id="vlwp7zq" oct="4" pname="e" accid.ges="n" />
+                                 </chord>
+                                 <chord xml:id="a1awc8ol" dur="8">
+                                    <note xml:id="l1ufntge" oct="4" pname="e" accid.ges="n" />
+                                    <note xml:id="nxq6cll" oct="4" pname="g" accid.ges="n" />
+                                 </chord>
+                                 <chord xml:id="a16fzqxk" dur="8">
+                                    <note xml:id="ylubfbi" oct="4" pname="c" accid.ges="n" />
+                                    <note xml:id="x1qijfro" oct="4" pname="e" accid.ges="n" />
+                                 </chord>
+                              </beam>
+                           </layer>
+                        </staff>
+                        <staff xml:id="k1ccvmbx" n="3">
+                           <layer xml:id="k1onwf8y" n="1">
+                              <chord xml:id="qu36i87" dots="1" dur="4">
+                                 <note xml:id="d1bp6nfw" oct="3" pname="c" accid.ges="n" />
+                                 <note xml:id="nxlbg6w" oct="3" pname="g" accid.ges="n" />
+                              </chord>
+                              <rest xml:id="e1pu9rwv" dur="8" />
+                           </layer>
+                        </staff>
+                     </measure>
+                  </ending>
+                  <ending xml:id="r1wpyvd" n="2">
+                     <measure xml:id="g1hwlyfa" right="end" n="14">
+                        <staff xml:id="lqy4i76" n="1">
+                           <layer xml:id="p3ruo0a" n="1">
+                              <note xml:id="note-0000001359203820" dur="4" oct="5" pname="c" accid.ges="n">
+                                 <verse xml:id="j19knp2v" n="1">
+                                    <syl xml:id="q1gxitk">Haus.</syl>
+                                 </verse>
+                              </note>
+                              <rest xml:id="dz5i2aa" dur="8" />
+                           </layer>
+                        </staff>
+                        <staff xml:id="u17jmr1w" n="2">
+                           <layer xml:id="e11huxwv" n="1">
+                              <chord xml:id="znr4k48" dots="1" dur="4">
+                                 <note xml:id="y1m8zn17" oct="4" pname="c" accid.ges="n" />
+                                 <note xml:id="n10jcx5a" oct="4" pname="e" accid.ges="n" />
+                                 <note xml:id="juiaea7" oct="4" pname="g" accid.ges="n" />
+                              </chord>
+                           </layer>
+                        </staff>
+                        <staff xml:id="r3i55up" n="3">
+                           <layer xml:id="h12zs17z" n="1">
+                              <beam xml:id="n1rmtrje">
+                                 <note xml:id="zjeoxmv" dur="8" oct="3" pname="c" accid.ges="n" />
+                                 <note xml:id="n1sctd0l" dur="8" oct="2" pname="g" accid.ges="n" />
+                                 <note xml:id="qwlajgs" dur="8" oct="2" pname="c" accid.ges="n" />
+                              </beam>
+                           </layer>
+                        </staff>
+                     </measure>
+                  </ending>
+               </section>
+            </score>
+         </mdiv>
+      </body>
+   </music>
+</mei>

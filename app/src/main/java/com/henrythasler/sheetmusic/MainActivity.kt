@@ -16,14 +16,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             MyApplicationTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    MainScreen(
-//                        name = stringFromJNI(),
-                        modifier = Modifier.padding(innerPadding),
-                        viewModel = VerovioViewModel(),
-//                        svgSource = RenderData(),
-                    )
-                }
+                AppSkeleton()
             }
         }
     }
