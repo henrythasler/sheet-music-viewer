@@ -3,7 +3,7 @@
 # For more examples on how to use CMake, see https://github.com/android/ndk-samples.
 
 # Build Verovio as a library
-set(BUILD_AS_LIBRARY ON)
+set(BUILD_AS_ANDROID_LIBRARY ON)
 # Add the subdirectory with the Verovio CMakeLists.txt
 add_subdirectory(./verovio/cmake)
 # Add the inlude paths with the Verovio files
@@ -34,7 +34,7 @@ project("sheetmusic")
 # used in the AndroidManifest.xml file.
 add_library(${CMAKE_PROJECT_NAME} SHARED
         # List C/C++ source files with relative paths to this CMakeLists.txt.
-        native-lib.cpp)
+        verovio-wrapper.cpp)
 
 # Specifies libraries CMake should link to your target library. You
 # can link libraries from various origins, such as libraries defined in this

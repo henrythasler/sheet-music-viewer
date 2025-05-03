@@ -2,11 +2,9 @@ package com.henrythasler.sheetmusic
 
 import android.util.Log
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -23,11 +21,11 @@ import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.unit.dp
+import androidx.core.graphics.withTranslation
 import com.caverock.androidsvg.RenderOptions
 import com.caverock.androidsvg.SVG
-import androidx.core.graphics.withTranslation
 
 /**
  * A composable function that renders SVG content using AndroidSVG library.
@@ -103,7 +101,15 @@ fun SvgImage(
 
                 // Apply tint if specified
                 tintColor?.let {
-                    renderOptions.css("svg { fill: #${it.toArgb().toUInt().toString(16).padStart(8, '0')} }")
+                    val color = String.format("#%02X%02X%02X%02X",
+                        (it.red * 255).toInt(),
+                        (it.green * 255).toInt(),
+                        (it.blue * 255).toInt(),
+                        (it.alpha * 255).toInt())
+                    Log.i("SVG", color)
+                    renderOptions
+                        .css(
+                            "svg { fill: $color;} path { color: $color;}")
                 }
 
                 // Define the viewport for rendering
@@ -127,8 +133,9 @@ fun SvgImage(
 fun ZoomableSvgImage(
     modifier: Modifier = Modifier,
     svgString: String,
+    tintColor: Color? = null,
     minScale: Float = 0.5f,
-    maxScale: Float = 5f
+    maxScale: Float = 10f
 ) {
     val svg = remember(svgString) {
         try {
@@ -141,6 +148,7 @@ fun ZoomableSvgImage(
 
     if (svg != null) {
         // State for zoom and pan
+        // State for zoom and pan
         var scale by remember { mutableFloatStateOf(1f) }
         var offset by remember { mutableStateOf(Offset.Zero) }
 
@@ -148,20 +156,39 @@ fun ZoomableSvgImage(
         val svgWidth = if (svg.documentWidth != -1f) svg.documentWidth else 100f
         val svgHeight = if (svg.documentHeight != -1f) svg.documentHeight else 100f
 
+        // Calculate the initial scale factor (to fit SVG in the view)
+        var canvasSize by remember { mutableStateOf(Offset.Zero) }
+
         Box(
             modifier = modifier
                 .clipToBounds()
-                .border(1.dp, Color.Red)
                 // Handle pinch-zoom and pan gestures
                 .pointerInput(Unit) {
-                    detectTransformGestures { _, pan, zoom, _ ->
-                        // Update scale with constraints
-                        scale = (scale * zoom)//.coerceIn(minScale, maxScale)
-                        // Update offset
-                        offset += pan
-                        offset *= zoom
+                    detectTransformGestures { centroid, pan, zoom, _ ->
+                        // Calculate new scale with constraints
+                        val newScale = (scale * zoom).coerceIn(minScale, maxScale)
 
-//                        Log.i("SVG", "pan: $pan, zoom: $zoom, scale: $scale, offset: $offset")
+                        // Calculate the center of the canvas
+                        val canvasCenterX = canvasSize.x / 2f
+                        val canvasCenterY = canvasSize.y / 2f
+
+                        // Calculate the position relative to the center of the canvas
+                        val relativeX = centroid.x - canvasCenterX
+                        val relativeY = centroid.y - canvasCenterY
+
+                        // Calculate the focus point considering both the current offset and the centered position
+                        val focusX = relativeX - offset.x
+                        val focusY = relativeY - offset.y
+
+                        // Calculate new offset to keep the pinch centroid at the same location after scaling
+                        val newOffset = Offset(
+                            offset.x + focusX - focusX * (newScale / scale),
+                            offset.y + focusY - focusY * (newScale / scale)
+                        )
+
+                        // Update scale and offset
+                        scale = newScale
+                        offset = newOffset + pan
                     }
                 }
         ) {
@@ -174,6 +201,9 @@ fun ZoomableSvgImage(
                         scaleY = scale
                         translationX = offset.x
                         translationY = offset.y
+                    }
+                    .onSizeChanged {
+                        canvasSize = Offset(it.width.toFloat(), it.height.toFloat())
                     }
             ) {
                 drawIntoCanvas { canvas ->
@@ -189,7 +219,7 @@ fun ZoomableSvgImage(
                     val initialScale = minOf(initialScaleX, initialScaleY)
 
                     val centeringX = (viewportWidth - svgWidth * initialScale) / 2f
-                    val centeringY = (viewportHeight - svgHeight * initialScale ) / 2f
+                    val centeringY = (viewportHeight - svgHeight * initialScale) / 2f
 
                     // Save canvas state
                     nativeCanvas.withTranslation(centeringX, centeringY) {
@@ -200,10 +230,21 @@ fun ZoomableSvgImage(
                         // Set up render options
                         val renderOptions = RenderOptions()
 
+                        // Apply tint if specified
+                        tintColor?.let {
+                            val color = String.format("#%02X%02X%02X%02X",
+                                (it.red * 255).toInt(),
+                                (it.green * 255).toInt(),
+                                (it.blue * 255).toInt(),
+                                (it.alpha * 255).toInt())
+                            Log.i("SVG", color)
+                            renderOptions
+                                .css(
+                                    "svg { fill: $color;} path { color: $color;}")
+                        }
+
                         // Render the SVG
                         svg.renderToCanvas(this, renderOptions)
-
-                        // Restore canvas state
                     }
                 }
             }

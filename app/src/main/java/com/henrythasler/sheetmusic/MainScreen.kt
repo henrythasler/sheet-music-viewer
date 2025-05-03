@@ -104,6 +104,7 @@ fun MainScreen(
                     .fillMaxSize()
                     .border(5.dp, MaterialTheme.colorScheme.primaryContainer),
                 svgString = svgData,
+//                tintColor = MaterialTheme.colorScheme.error
             )
         }
 //        }
