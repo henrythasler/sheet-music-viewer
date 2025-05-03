@@ -15,7 +15,10 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            MyApplicationTheme {
+            MyApplicationTheme(
+//                darkTheme = true,
+//                dynamicColor = false
+            ) {
                 AppSkeleton()
             }
         }

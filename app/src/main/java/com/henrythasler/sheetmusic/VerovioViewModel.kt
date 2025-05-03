@@ -17,12 +17,6 @@ import java.io.IOException
 
 class VerovioViewModel : ViewModel() {
     private var path: String? = null
-
-//    var _svgData by mutableStateOf<String?>(null)
-//    var svgData by mutableStateOf<String?>(null)
-//        private set
-//    val svgData: State<String?>
-//        get() = _svgData
     private val _svgData = MutableStateFlow("")
     val svgData = _svgData.asStateFlow()
 
