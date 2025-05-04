@@ -2,4 +2,6 @@
     <string name="app_name">My Application</string>
     <string name="title_activity_main2">MainActivity2</string>
     <string name="description">description</string>
+    <string name="home_title">home_title</string>
+    <string name="sheet_title">sheet_title</string>
 </resources>
