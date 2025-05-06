@@ -1,48 +1,63 @@
 package com.henrythasler.sheetmusic
 
+import androidx.compose.material3.Icon
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
+import androidx.navigation.compose.currentBackStackEntryAsState
 
-object MusicViewerDestinations {
-    const val FILES = "files"
-    const val SHEET = "sheet"
+data class NavigationItem(
+    val title: String,
+    val selectedIcon: ImageVector,
+    val unselectedIcon: ImageVector,
+    val route: String
+)
+
+sealed class Screen(val route: String) {
+    data object Home : Screen("home")
+    data object Browser : Screen("browser")
+    data object Notation : Screen(route = "notation/{itemId}") {
+        fun createRoute(itemId: String) = "notation/$itemId"
+    }
 }
 
-//sealed class Screen(val route: String) {
-//    object Home : Screen("home")
-//    object Browser : Screen("browser")
-//    object Settings : Screen("settings")
-//    object Notation : Screen(route = "notation/{itemId}") {
-//        fun createRoute(itemId: String) = "notation/$itemId"
-//    }
-//}
+@Composable
+fun BottomNavigationBar(navController: NavHostController, items: List<NavigationItem>) {
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = navBackStackEntry?.destination?.route
 
-/**
- * Models the navigation actions in the app.
- */
-class MusicViewerNavigationActions(navController: NavHostController) {
-    val navigateToFiles: () -> Unit = {
-        navController.navigate(MusicViewerDestinations.FILES) {
-            // Pop up to the start destination of the graph to
-            // avoid building up a large stack of destinations
-            // on the back stack as users select items
-            popUpTo(navController.graph.findStartDestination().id) {
-                saveState = true
-            }
-            // Avoid multiple copies of the same destination when
-            // reselecting the same item
-            launchSingleTop = true
-            // Restore state when reselecting a previously selected item
-            restoreState = true
-        }
-    }
-    val navigateToSheetMusic: () -> Unit = {
-        navController.navigate(MusicViewerDestinations.SHEET) {
-            popUpTo(navController.graph.findStartDestination().id) {
-                saveState = true
-            }
-            launchSingleTop = true
-            restoreState = true
+    NavigationBar {
+        items.forEach { item ->
+            val selected = currentRoute == item.route
+
+            NavigationBarItem(
+                icon = {
+                    Icon(
+                        imageVector = if (selected) item.selectedIcon else item.unselectedIcon,
+                        contentDescription = item.title
+                    )
+                },
+                label = { Text(item.title) },
+                selected = selected,
+                onClick = {
+                    navController.navigate(item.route) {
+                        // Pop up to the start destination of the graph to
+                        // avoid building up a large stack of destinations
+                        popUpTo(navController.graph.findStartDestination().id) {
+                            saveState = true
+                        }
+                        // Avoid multiple copies of the same destination
+                        launchSingleTop = true
+                        // Restore state when navigating back
+                        restoreState = true
+                    }
+                }
+            )
         }
     }
 }

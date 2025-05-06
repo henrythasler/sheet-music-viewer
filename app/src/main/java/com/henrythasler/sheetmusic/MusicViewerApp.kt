@@ -1,21 +1,25 @@
 package com.henrythasler.sheetmusic
 
-import androidx.compose.foundation.layout.Row
-import androidx.compose.material3.DrawerState
-import androidx.compose.material3.DrawerValue
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.outlined.Favorite
+import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ModalNavigationDrawer
-import androidx.compose.material3.Text
-import androidx.compose.material3.rememberDrawerState
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.compose.ui.Modifier
+import androidx.navigation.NavType
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.henrythasler.sheetmusic.ui.theme.MyApplicationTheme
-import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -27,83 +31,55 @@ fun MusicViewerApp(
 //                dynamicColor = false
     ) {
         val navController = rememberNavController()
-        val navigationActions = remember(navController) {
-            MusicViewerNavigationActions(navController)
-        }
+        val viewModel = remember{VerovioViewModel()}
 
-        val coroutineScope = rememberCoroutineScope()
+        val items = listOf(
+            NavigationItem(
+                title = "Home",
+                selectedIcon = Icons.Filled.Home,
+                unselectedIcon = Icons.Outlined.Home,
+                route = Screen.Home.route
+            ),
+            NavigationItem(
+                title = "Notation",
+                selectedIcon = Icons.Filled.Favorite,
+                unselectedIcon = Icons.Outlined.Favorite,
+                route = Screen.Notation.route
+            ),
+            NavigationItem(
+                title = "Browser",
+                selectedIcon = Icons.Filled.Search,
+                unselectedIcon = Icons.Outlined.Search,
+                route = Screen.Browser.route
+            )
+        )
 
-        val navBackStackEntry by navController.currentBackStackEntryAsState()
-        val currentRoute =
-            navBackStackEntry?.destination?.route ?: MusicViewerDestinations.SHEET
-
-        val isExpandedScreen = widthSizeClass == WindowWidthSizeClass.Expanded
-        val sizeAwareDrawerState = rememberSizeAwareDrawerState(isExpandedScreen)
-
-        ModalNavigationDrawer(
-            drawerContent = {
-                AppDrawer(
-                    drawerState = sizeAwareDrawerState,
-                    currentRoute = currentRoute,
-                    navigateToFiles = navigationActions.navigateToFiles,
-                    navigateToSheet = navigationActions.navigateToSheetMusic,
-                    closeDrawer = { coroutineScope.launch { sizeAwareDrawerState.close() } }
-                )
-            },
-            drawerState = sizeAwareDrawerState,
-            // Only enable opening the drawer via gestures if the screen is not expanded
-            gesturesEnabled = !isExpandedScreen
-        ) {
-            Row {
-                if (isExpandedScreen) {
-                    Text("isExpandedScreen")
-//                    AppNavRail(
-//                        currentRoute = currentRoute,
-//                        navigateToHome = navigationActions.navigateToHome,
-//                        navigateToInterests = navigationActions.navigateToInterests,
-//                    )
+        Scaffold(
+            bottomBar = {
+                BottomNavigationBar(navController = navController, items = items)
+            }
+        ) { innerPadding ->
+            NavHost(
+                navController = navController,
+                startDestination = Screen.Home.route,
+                modifier = Modifier.padding(innerPadding)
+            ) {
+                composable(Screen.Home.route) { HomeScreen(navController) }
+                composable(Screen.Browser.route) { BrowserScreen(navController) }
+                composable(
+                    route = Screen.Notation.route,
+                    arguments = listOf(
+                        navArgument("itemId") {
+                            type = NavType.StringType
+                            nullable = true
+                        }
+                    )
+                    ) { backStackEntry ->
+                    // Extract the argument
+                    val itemId = backStackEntry.arguments?.getString("itemId")
+                    NotationScreen(navController, viewModel = viewModel, itemId = itemId)
                 }
-                MusicViewerNavGraph(
-//                    appContainer = appContainer,
-                    isExpandedScreen = isExpandedScreen,
-                    navController = navController,
-                    openDrawer = { coroutineScope.launch { sizeAwareDrawerState.open() } },
-                )
             }
         }
-
-//        Scaffold(
-////        topBar = {
-////            TopAppBar(
-////                title = { Text("Menu") }
-////            )
-////        },
-////        bottomBar = { },
-////        floatingActionButton = { }
-//        ) { innerPadding ->
-//            SheetViewer(
-//                modifier = Modifier.padding(innerPadding),
-//                viewModel = VerovioViewModel(),
-//            )
-//        }
-    }
-}
-
-/**
- * Determine the drawer state to pass to the modal drawer.
- */
-@Composable
-private fun rememberSizeAwareDrawerState(isExpandedScreen: Boolean): DrawerState {
-    val drawerState = rememberDrawerState(DrawerValue.Closed)
-
-    return if (!isExpandedScreen) {
-        // If we want to allow showing the drawer, we use a real, remembered drawer
-        // state defined above
-        drawerState
-    } else {
-        // If we don't want to allow the drawer to be shown, we provide a drawer state
-        // that is locked closed. This is intentionally not remembered, because we
-        // don't want to keep track of any changes and always keep it closed
-        DrawerState(DrawerValue.Closed)
     }
 }
