@@ -12,8 +12,10 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -32,14 +34,15 @@ fun MusicViewerApp(
     ) {
         val navController = rememberNavController()
         val viewModel = remember{VerovioViewModel()}
+        val context = LocalContext.current
+
+        LaunchedEffect(true) {
+            viewModel.loadAssets(context)
+            viewModel.getVerovioVersion()
+        }
+
 
         val items = listOf(
-            NavigationItem(
-                title = "Home",
-                selectedIcon = Icons.Filled.Home,
-                unselectedIcon = Icons.Outlined.Home,
-                route = Screen.Home.route
-            ),
             NavigationItem(
                 title = "Notation",
                 selectedIcon = Icons.Filled.Favorite,
@@ -61,10 +64,9 @@ fun MusicViewerApp(
         ) { innerPadding ->
             NavHost(
                 navController = navController,
-                startDestination = Screen.Home.route,
+                startDestination = Screen.Notation.route,
                 modifier = Modifier.padding(innerPadding)
             ) {
-                composable(Screen.Home.route) { HomeScreen(navController) }
                 composable(Screen.Browser.route) { BrowserScreen(navController) }
                 composable(
                     route = Screen.Notation.route,

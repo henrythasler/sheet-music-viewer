@@ -19,31 +19,25 @@ import androidx.navigation.NavHostController
 @Composable
 fun NotationScreen(
     navController: NavHostController,
-    modifier: Modifier = Modifier,
     viewModel: VerovioViewModel = VerovioViewModel(),
     itemId: String?
 ) {
-    val context = LocalContext.current
 
     LaunchedEffect(true) {
-        viewModel.getVerovioVersion();
-        viewModel.loadAsset(context, "data")
         viewModel.renderData()
     }
 
-    Scaffold { innerPadding ->
+//    Scaffold { innerPadding ->
         val verovioVersion = viewModel.verovioVersion.value
         val svgData by viewModel.svgData.collectAsStateWithLifecycle()
 
-        Column(
-            modifier = modifier.padding(innerPadding)
-        ) {
+        Column {
             Text(
-                text = "Verovio $verovioVersion", modifier = modifier
+                text = "Verovio $verovioVersion",
             )
 
             Text(
-                text = "$itemId"
+                text = "File: ${itemId ?: "-"}"
             )
 
             if (svgData.isNotEmpty()) {
@@ -56,5 +50,5 @@ fun NotationScreen(
                 )
             }
         }
-    }
+//    }
 }

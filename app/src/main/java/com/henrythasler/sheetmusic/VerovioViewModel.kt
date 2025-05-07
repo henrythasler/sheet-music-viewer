@@ -3,26 +3,28 @@ package com.henrythasler.sheetmusic
 import android.content.Context
 import android.util.Log
 import androidx.compose.runtime.State
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
+import kotlin.system.measureTimeMillis
 
 class VerovioViewModel : ViewModel() {
-    private var path: String? = null
     private val _svgData = MutableStateFlow("")
     val svgData = _svgData.asStateFlow()
 
     private val _verovioVersion = mutableStateOf<String?>(null)
     val verovioVersion: State<String?>
         get() = _verovioVersion
+
+    private val _executionTime = MutableStateFlow<Long>(0)
+    val executionTime: StateFlow<Long> = _executionTime
 
     fun getVerovioVersion() {
         viewModelScope.launch {
@@ -32,20 +34,22 @@ class VerovioViewModel : ViewModel() {
 
     fun renderData() {
         viewModelScope.launch {
-            if (!path.isNullOrEmpty()) {
-                Log.i("VerovioViewModel", "using path '$path'")
-                _svgData.value = renderData(path.toString())
-//                Log.d("VerovioViewModel", "SVG: '${_svgData.value}'")
-            } else {
-                Log.e("VerovioViewModel", "Path is invalid")
+            val timeMillis = measureTimeMillis {
+                _svgData.value = renderData("test")
             }
+
+            _executionTime.value = timeMillis
+            Log.d("VerovioViewModel", "renderData() took $timeMillis ms")
         }
     }
 
     // Function to extract and load asset
-    fun loadAsset(context: Context, assetName: String) {
+    fun loadAssets(context: Context) {
         viewModelScope.launch {
-            path = extractAssetsFromDirectory(context, assetName)
+            extractAssetsFromDirectory(context, "mei")
+            val verovioDataPath = extractAssetsFromDirectory(context, "data")
+            Log.i("VerovioViewModel", "using path '$verovioDataPath'")
+            setDataPath(verovioDataPath)
         }
     }
 
@@ -56,6 +60,8 @@ class VerovioViewModel : ViewModel() {
 
         try {
             val assetList = context.assets.list(directory) ?: return rootPath
+
+            Log.i("VerovioViewModel", "Extracting '$directory'")
 
             // Create the root directory if needed
             val rootDir = File(rootPath)
@@ -114,4 +120,5 @@ class VerovioViewModel : ViewModel() {
     }
     private external fun getVersion(): String
     private external fun renderData(path: String): String
+    private external fun setDataPath(path: String)
 }
