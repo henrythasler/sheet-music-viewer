@@ -33,7 +33,8 @@ fun MusicViewerApp(
 //                dynamicColor = false
     ) {
         val navController = rememberNavController()
-        val viewModel = remember{VerovioViewModel()}
+        val viewModel = remember { VerovioViewModel() }
+        val assetsViewModel = remember { AssetsViewModel() }
         val context = LocalContext.current
 
         LaunchedEffect(true) {
@@ -64,10 +65,14 @@ fun MusicViewerApp(
         ) { innerPadding ->
             NavHost(
                 navController = navController,
-                startDestination = Screen.Notation.route,
+                startDestination = Screen.Browser.route,
                 modifier = Modifier.padding(innerPadding)
             ) {
-                composable(Screen.Browser.route) { BrowserScreen(navController) }
+                composable(
+                    route = Screen.Browser.route
+                ) {
+                    BrowserScreen(navController = navController, assetPath = "mei", viewModel = assetsViewModel)
+                }
                 composable(
                     route = Screen.Notation.route,
                     arguments = listOf(
@@ -76,7 +81,7 @@ fun MusicViewerApp(
                             nullable = true
                         }
                     )
-                    ) { backStackEntry ->
+                ) { backStackEntry ->
                     // Extract the argument
                     val itemId = backStackEntry.arguments?.getString("itemId")
                     NotationScreen(navController, viewModel = viewModel, itemId = itemId)
