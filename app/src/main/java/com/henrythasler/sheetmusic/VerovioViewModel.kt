@@ -26,16 +26,44 @@ class VerovioViewModel : ViewModel() {
     private val _executionTime = MutableStateFlow<Long>(0)
     val executionTime: StateFlow<Long> = _executionTime
 
+    private val _uiState = MutableStateFlow<AssetUiState>(AssetUiState.Loading)
+    val uiState: StateFlow<AssetUiState> = _uiState.asStateFlow()
+
+    suspend fun loadAssets(context: Context, assetPath: String = "") {
+        _uiState.value = AssetUiState.Loading
+
+        try {
+            val assets = AssetUtils.listAssetsInPath(context, assetPath)
+
+            _uiState.value = if (assets.isEmpty()) {
+                AssetUiState.Empty
+            } else {
+                AssetUiState.Success(assets)
+            }
+        } catch (e: Exception) {
+            _uiState.value = AssetUiState.Error("Error loading assets: ${e.message}")
+        }
+    }
+
+    suspend fun refreshAssets(context: Context, assetPath: String = "") {
+        loadAssets(context, assetPath)
+    }
+
     fun getVerovioVersion() {
         viewModelScope.launch {
             _verovioVersion.value = getVersion()
         }
     }
 
-    fun renderData() {
+    fun renderAsset(context: Context, assetPath: String) {
         viewModelScope.launch {
             val timeMillis = measureTimeMillis {
-                _svgData.value = renderData("test")
+                try {
+                    val data = context.assets.open(assetPath).bufferedReader().use { it.readText() }
+                    _svgData.value = renderData(data)
+                } catch (e: Exception) {
+                    "Failed to load asset: ${e.localizedMessage}"
+                }
             }
 
             _executionTime.value = timeMillis
@@ -119,6 +147,6 @@ class VerovioViewModel : ViewModel() {
         System.loadLibrary("sheetmusic")
     }
     private external fun getVersion(): String
-    private external fun renderData(path: String): String
+    private external fun renderData(data: String): String
     private external fun setDataPath(path: String)
 }

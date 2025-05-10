@@ -1,5 +1,6 @@
 package com.henrythasler.sheetmusic
 
+import android.net.Uri
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -21,8 +22,13 @@ data class NavigationItem(
 sealed class Screen(val route: String) {
     data object Home : Screen("home")
     data object Browser : Screen("browser")
-    data object Notation : Screen(route = "notation/{itemId}") {
-        fun createRoute(itemId: String) = "notation/$itemId"
+    data object Notation : Screen(route = "notation/{encodedFolderPath}/{filename}") {
+        fun createRoute(folderPath: String, filename: String): String {
+            // Encode the folder path to handle special characters like '/', '\', etc.
+            val encodedFolder = Uri.encode(folderPath)
+            val encodedFilename = Uri.encode(filename)
+            return "notation/$encodedFolder/$encodedFilename"
+        }
     }
 }
 

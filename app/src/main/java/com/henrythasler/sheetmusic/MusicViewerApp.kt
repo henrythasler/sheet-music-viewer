@@ -1,5 +1,6 @@
 package com.henrythasler.sheetmusic
 
+import android.net.Uri
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
@@ -34,7 +35,6 @@ fun MusicViewerApp(
     ) {
         val navController = rememberNavController()
         val viewModel = remember { VerovioViewModel() }
-        val assetsViewModel = remember { AssetsViewModel() }
         val context = LocalContext.current
 
         LaunchedEffect(true) {
@@ -71,20 +71,29 @@ fun MusicViewerApp(
                 composable(
                     route = Screen.Browser.route
                 ) {
-                    BrowserScreen(navController = navController, assetPath = "mei", viewModel = assetsViewModel)
+                    BrowserScreen(navController = navController, assetPath = "mei", viewModel = viewModel)
                 }
                 composable(
                     route = Screen.Notation.route,
                     arguments = listOf(
-                        navArgument("itemId") {
-                            type = NavType.StringType
-                            nullable = true
-                        }
+                        navArgument("encodedFolderPath") { type = NavType.StringType },
+                        navArgument("filename") { type = NavType.StringType }
                     )
                 ) { backStackEntry ->
-                    // Extract the argument
-                    val itemId = backStackEntry.arguments?.getString("itemId")
-                    NotationScreen(navController, viewModel = viewModel, itemId = itemId)
+                    // Extract and decode the arguments
+                    val encodedFolderPath = backStackEntry.arguments?.getString("encodedFolderPath") ?: ""
+                    val filename = backStackEntry.arguments?.getString("filename") ?: ""
+
+                    // Decode the folder path
+                    val folderPath = Uri.decode(encodedFolderPath)
+                    val decodedFilename = Uri.decode(filename)
+
+                    NotationScreen(
+                        navController = navController,
+                        viewModel = viewModel,
+                        folderPath = folderPath,
+                        filename = decodedFilename
+                    )
                 }
             }
         }

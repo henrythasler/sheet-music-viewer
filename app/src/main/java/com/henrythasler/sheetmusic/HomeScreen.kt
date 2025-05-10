@@ -32,7 +32,7 @@ fun HomeScreen(navController: NavHostController) {
 
         Button(onClick = {
             // Navigate with arguments
-            navController.navigate(Screen.Notation.createRoute("123"))
+            navController.navigate(Screen.Notation.createRoute("123", "456"))
         }) {
             Text("View Item Details")
         }

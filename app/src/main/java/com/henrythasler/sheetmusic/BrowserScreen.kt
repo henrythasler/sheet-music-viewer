@@ -48,6 +48,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 
@@ -121,36 +122,11 @@ sealed class AssetUiState {
     data class Error(val message: String) : AssetUiState()
 }
 
-class AssetsViewModel : ViewModel() {
-    private val _uiState = MutableStateFlow<AssetUiState>(AssetUiState.Loading)
-    val uiState: StateFlow<AssetUiState> = _uiState.asStateFlow()
-
-    suspend fun loadAssets(context: Context, assetPath: String = "") {
-        _uiState.value = AssetUiState.Loading
-
-        try {
-            val assets = AssetUtils.listAssetsInPath(context, assetPath)
-
-            _uiState.value = if (assets.isEmpty()) {
-                AssetUiState.Empty
-            } else {
-                AssetUiState.Success(assets)
-            }
-        } catch (e: Exception) {
-            _uiState.value = AssetUiState.Error("Error loading assets: ${e.message}")
-        }
-    }
-
-    suspend fun refreshAssets(context: Context, assetPath: String = "") {
-        loadAssets(context, assetPath)
-    }
-}
-
 @Composable
 fun BrowserScreen(
     navController: NavHostController,
     assetPath: String = "",
-    viewModel: AssetsViewModel = AssetsViewModel()
+    viewModel: VerovioViewModel,
 ) {
     val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsState()
@@ -198,6 +174,17 @@ fun BrowserScreen(
                                 // Handle asset click
                                 val message = "Selected: ${assetItem.name} (${assetItem.path})"
                                 Log.d("AssetsGridScreen", message)
+
+                                if(assetItem.isDirectory) {
+                                    coroutineScope.launch {
+                                        viewModel.refreshAssets(context, assetItem.path)
+                                    }
+                                }
+                                else {
+                                    navController.navigate(
+                                        Screen.Notation.createRoute(assetItem.path, assetItem.name)
+                                    )
+                                }
 
                                 // Here you can handle the asset click event
                                 // Open the asset, navigate to the folder, etc.

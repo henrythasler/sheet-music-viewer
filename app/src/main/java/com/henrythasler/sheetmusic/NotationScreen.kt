@@ -3,9 +3,7 @@ package com.henrythasler.sheetmusic
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -19,12 +17,14 @@ import androidx.navigation.NavHostController
 @Composable
 fun NotationScreen(
     navController: NavHostController,
-    viewModel: VerovioViewModel = VerovioViewModel(),
-    itemId: String?
+    viewModel: VerovioViewModel,
+    folderPath: String,
+    filename: String
 ) {
+    val context = LocalContext.current
 
     LaunchedEffect(true) {
-        viewModel.renderData()
+        viewModel.renderAsset(context, folderPath)
     }
 
 //    Scaffold { innerPadding ->
@@ -37,7 +37,7 @@ fun NotationScreen(
             )
 
             Text(
-                text = "File: ${itemId ?: "-"}"
+                text = "Item: $folderPath"
             )
 
             if (svgData.isNotEmpty()) {
