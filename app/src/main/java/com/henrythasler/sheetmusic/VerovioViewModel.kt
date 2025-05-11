@@ -23,17 +23,25 @@ class VerovioViewModel : ViewModel() {
     val verovioVersion: State<String?>
         get() = _verovioVersion
 
-    private val _executionTime = MutableStateFlow<Long>(0)
-    val executionTime: StateFlow<Long> = _executionTime
-
     private val _uiState = MutableStateFlow<AssetUiState>(AssetUiState.Loading)
     val uiState: StateFlow<AssetUiState> = _uiState.asStateFlow()
 
-    suspend fun loadAssets(context: Context, assetPath: String = "") {
+    private val _meiAssetsFolder = MutableStateFlow("mei")
+    var meiAssetsFolder = _meiAssetsFolder.asStateFlow()
+
+    suspend fun readAssets(context: Context, newFolder: String? = null) {
         _uiState.value = AssetUiState.Loading
 
+        if(newFolder != null) {
+            _meiAssetsFolder.value = newFolder
+        }
+
         try {
-            val assets = AssetUtils.listAssetsInPath(context, assetPath)
+            val assets = AssetUtils.listAssetsInPath(context, _meiAssetsFolder.value).toMutableList()
+            assets.add(
+                    0,
+                    AssetItem("..", "mei", true)
+                )
 
             _uiState.value = if (assets.isEmpty()) {
                 AssetUiState.Empty
@@ -43,10 +51,6 @@ class VerovioViewModel : ViewModel() {
         } catch (e: Exception) {
             _uiState.value = AssetUiState.Error("Error loading assets: ${e.message}")
         }
-    }
-
-    suspend fun refreshAssets(context: Context, assetPath: String = "") {
-        loadAssets(context, assetPath)
     }
 
     fun getVerovioVersion() {
@@ -66,15 +70,13 @@ class VerovioViewModel : ViewModel() {
                 }
             }
 
-            _executionTime.value = timeMillis
             Log.d("VerovioViewModel", "renderData() took $timeMillis ms")
         }
     }
 
     // Function to extract and load asset
-    fun loadAssets(context: Context) {
+    fun extractAssets(context: Context) {
         viewModelScope.launch {
-            extractAssetsFromDirectory(context, "mei")
             val verovioDataPath = extractAssetsFromDirectory(context, "data")
             Log.i("VerovioViewModel", "using path '$verovioDataPath'")
             setDataPath(verovioDataPath)

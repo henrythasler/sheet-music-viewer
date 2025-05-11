@@ -5,7 +5,6 @@ import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -23,7 +22,6 @@ import androidx.compose.material.icons.filled.AccountBox
 import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Info
-import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -38,19 +36,13 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.ViewModel
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.io.File
 
 // Asset item class representing a file in the assets folder
 data class AssetItem(
@@ -125,16 +117,16 @@ sealed class AssetUiState {
 @Composable
 fun BrowserScreen(
     navController: NavHostController,
-    assetPath: String = "",
     viewModel: VerovioViewModel,
 ) {
     val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsState()
     val coroutineScope = rememberCoroutineScope()
+    val meiAssetsFolder by viewModel.meiAssetsFolder.collectAsState()
 
     // Load assets when composable is first launched
-    LaunchedEffect(assetPath) {
-        viewModel.loadAssets(context, assetPath)
+    LaunchedEffect(meiAssetsFolder) {
+        viewModel.readAssets(context)
     }
 
     Box(
@@ -177,7 +169,7 @@ fun BrowserScreen(
 
                                 if(assetItem.isDirectory) {
                                     coroutineScope.launch {
-                                        viewModel.refreshAssets(context, assetItem.path)
+                                        viewModel.readAssets(context, assetItem.path)
                                     }
                                 }
                                 else {

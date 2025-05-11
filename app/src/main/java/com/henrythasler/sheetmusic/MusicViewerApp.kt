@@ -4,10 +4,8 @@ import android.net.Uri
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.outlined.Favorite
-import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
@@ -38,7 +36,7 @@ fun MusicViewerApp(
         val context = LocalContext.current
 
         LaunchedEffect(true) {
-            viewModel.loadAssets(context)
+            viewModel.extractAssets(context)
             viewModel.getVerovioVersion()
         }
 
@@ -71,7 +69,7 @@ fun MusicViewerApp(
                 composable(
                     route = Screen.Browser.route
                 ) {
-                    BrowserScreen(navController = navController, assetPath = "mei", viewModel = viewModel)
+                    BrowserScreen(navController = navController, viewModel = viewModel)
                 }
                 composable(
                     route = Screen.Notation.route,
