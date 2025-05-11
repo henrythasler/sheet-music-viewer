@@ -36,7 +36,9 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -231,13 +233,13 @@ fun AssetGridItem(
             Box(
                 modifier = Modifier
                     .size(64.dp)
-                    .background(Color.LightGray.copy(alpha = 0.2f))
-                    .border(1.dp, Color.LightGray.copy(alpha = 0.5f))
+//                    .background(Color.LightGray.copy(alpha = 0.2f))
+//                    .border(1.dp, Color.LightGray.copy(alpha = 0.5f))
             ) {
                 when (AssetUtils.getFileType(assetItem.name)) {
                     AssetFileType.FOLDER -> {
                         Icon(
-                            imageVector = Icons.Default.AccountBox,
+                            painter = painterResource(R.drawable.baseline_folder_24),
                             contentDescription = null,
                             modifier = Modifier
                                 .size(40.dp)
@@ -247,12 +249,12 @@ fun AssetGridItem(
                     }
                     AssetFileType.MEI -> {
                         Icon(
-                            imageVector = Icons.Default.CheckCircle,
+                            painter = painterResource(R.drawable.mei_logo_simple_light),//Icons.Default.CheckCircle,
                             contentDescription = null,
                             modifier = Modifier
                                 .size(40.dp)
                                 .align(Alignment.Center),
-                            tint = Color(0xFF4285F4)
+//                            tint = Color(0xFF4285F4)
                         )
                     }
                     AssetFileType.OTHER -> {
