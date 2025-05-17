@@ -57,9 +57,9 @@ fun MusicViewerApp(
         )
 
         Scaffold(
-            bottomBar = {
-                BottomNavigationBar(navController = navController, items = items)
-            }
+//            bottomBar = {
+//                BottomNavigationBar(navController = navController, items = items)
+//            }
         ) { innerPadding ->
             NavHost(
                 navController = navController,

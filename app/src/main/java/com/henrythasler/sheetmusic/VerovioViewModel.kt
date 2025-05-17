@@ -38,11 +38,6 @@ class VerovioViewModel : ViewModel() {
 
         try {
             val assets = AssetUtils.listAssetsInPath(context, _meiAssetsFolder.value).toMutableList()
-            assets.add(
-                    0,
-                    AssetItem("..", "mei", true)
-                )
-
             _uiState.value = if (assets.isEmpty()) {
                 AssetUiState.Empty
             } else {
