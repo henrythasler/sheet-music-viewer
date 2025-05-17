@@ -43,10 +43,11 @@ fun NotationScreen(
             if (svgData.isNotEmpty()) {
                 ZoomableSvgImage(
                     modifier = Modifier
-                        .fillMaxSize()
-                        .border(5.dp, MaterialTheme.colorScheme.primaryContainer),
+                        .fillMaxSize(),
+//                        .border(5.dp, MaterialTheme.colorScheme.primaryContainer),
                     svgString = svgData,
-//                tintColor = MaterialTheme.colorScheme.error
+                    panLimitFactor = 0.5f
+//                    tintColor = MaterialTheme.colorScheme.error
                 )
             }
         }
