@@ -32,6 +32,7 @@ import androidx.core.graphics.withTranslation
 import com.caverock.androidsvg.RenderOptions
 import com.caverock.androidsvg.SVG
 import com.caverock.androidsvg.SimpleAssetResolver
+import kotlin.system.measureTimeMillis
 
 /**
  * A composable function that renders SVG content using AndroidSVG library.
@@ -260,7 +261,7 @@ fun ZoomableSvgImage(
 
                         // background for SVG
                         nativeCanvas.drawRect(0f, 0f, svgWidth, svgHeight, Paint(Paint.ANTI_ALIAS_FLAG).apply { color =
-                            0x10000000.toInt()
+                            0x08000000.toInt()
                         })
 
                         // Set up render options
@@ -279,8 +280,16 @@ fun ZoomableSvgImage(
                                     "svg { fill: $color;} path { color: $color;}")
                         }
 
+                        // use custom font for all text items
+                        renderOptions
+                            .css(
+                                "text { font-family: Edwin-Roman;}")
+
                         // Render the SVG
-                        svg.renderToCanvas(this, renderOptions)
+                        val timeMillis = measureTimeMillis {
+                            svg.renderToCanvas(this, renderOptions)
+                        }
+                        Log.d("SVG", "renderToCanvas() took $timeMillis ms")
                     }
                 }
             }
