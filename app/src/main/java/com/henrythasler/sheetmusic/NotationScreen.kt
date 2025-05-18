@@ -46,8 +46,9 @@ fun NotationScreen(
                         .fillMaxSize(),
 //                        .border(5.dp, MaterialTheme.colorScheme.primaryContainer),
                     svgString = svgData,
-                    panLimitFactor = 0.5f
-//                    tintColor = MaterialTheme.colorScheme.error
+                    panLimitFactor = 0.5f,
+//                    tintColor = MaterialTheme.colorScheme.error,
+                    customFont = "Edwin-Roman",
                 )
             }
         }

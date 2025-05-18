@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">My Application</string>
+    <string name="app_name">Verovio Demo</string>
     <string name="title_activity_main2">MainActivity2</string>
     <string name="description">description</string>
     <string name="home_title">home_title</string>

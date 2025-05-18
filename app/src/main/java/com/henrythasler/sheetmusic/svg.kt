@@ -1,6 +1,8 @@
 package com.henrythasler.sheetmusic
 
+import android.content.Context
 import android.graphics.Paint
+import android.graphics.Typeface
 import android.util.Log
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.detectTransformGestures
@@ -15,14 +17,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.nativeCanvas
-import androidx.compose.ui.graphics.painter.Painter
-import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
@@ -31,7 +32,8 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.core.graphics.withTranslation
 import com.caverock.androidsvg.RenderOptions
 import com.caverock.androidsvg.SVG
-import com.caverock.androidsvg.SimpleAssetResolver
+import com.caverock.androidsvg.SVGExternalFileResolver
+import java.nio.file.Paths
 import kotlin.system.measureTimeMillis
 
 /**
@@ -132,6 +134,41 @@ fun SvgImage(
     }
 }
 
+/**
+ * Custom resolver for AndroidSVG to resolve fonts that must be loaded from assets.
+ * Caches loaded fonts to improve performance
+ */
+class FastFontResolver(context: Context, assetFolder: String = "") : SVGExternalFileResolver() {
+    // Member Variables
+    private val _context: Context = context
+    private val _folder: String = assetFolder
+    private val fontCache = mutableMapOf<String , Typeface>()
+
+    override fun resolveFont(fontFamily: String, fontWeight: Int, fontStyle: String): Typeface? {
+        if(this.fontCache.containsKey(fontFamily)) {
+            Log.d("FastFontResolver", "cache hit for $fontFamily ($fontWeight, $fontStyle)")
+            return this.fontCache[fontFamily]
+        }
+
+        val fullPath = Paths.get(this._folder, fontFamily)
+        Log.d("FastFontResolver", "caching $fontFamily ($fontWeight, $fontStyle) from $fullPath")
+        try {
+            this.fontCache[fontFamily] = Typeface.createFromAsset(_context.assets, "$fullPath.ttf")
+            return this.fontCache[fontFamily]
+        }
+        catch (_: Exception) { }
+
+        try {
+            this.fontCache[fontFamily] = Typeface.createFromAsset(_context.assets, "$fullPath.otf")
+            return this.fontCache[fontFamily]
+        }
+        catch (_: Exception) { }
+
+        Log.e("FastFontResolver", "Could not resolve $fontFamily ($fontWeight, $fontStyle)")
+
+        return null
+    }
+}
 
 /**
  * A composable that renders an SVG with pinch-zoom and pan functionality
@@ -143,13 +180,20 @@ fun ZoomableSvgImage(
     tintColor: Color? = null,
     minScale: Float = 0.5f,
     maxScale: Float = 10f,
-    panLimitFactor: Float = 0.8f,  // Controls how far you can pan (0.5 = half SVG can go off-screen)
+    panLimitFactor: Float = 0.5f,  // Controls how far you can pan (0.5 = half SVG can go off-screen)
+    customFont: String? = null,
 ) {
     val context = LocalContext.current
+
+    val fastFontResolver = remember(context) {
+        FastFontResolver(context, "fonts");
+    }
+
     val svg = remember(svgString) {
         try {
             Log.i("SVG", "rendering SVG-data (${svgString.length / 1024} KiB)")
-            SVG.registerExternalFileResolver(SimpleAssetResolver(context.assets));
+//            SVG.registerExternalFileResolver(SimpleAssetResolver(context.assets));
+            SVG.registerExternalFileResolver(fastFontResolver);
             SVG.getFromString(svgString)
         } catch (e: Exception) {
             e.printStackTrace()
@@ -158,7 +202,6 @@ fun ZoomableSvgImage(
     }
 
     if (svg != null) {
-        // State for zoom and pan
         // State for zoom and pan
         var scale by remember { mutableFloatStateOf(1f) }
         var offset by remember { mutableStateOf(Offset.Zero) }
@@ -216,7 +259,6 @@ fun ZoomableSvgImage(
         ) {
             Canvas(
                 modifier = Modifier
-                    .fillMaxSize()
                     .graphicsLayer {
                         // Apply current scale and offset
                         scaleX = scale
@@ -233,6 +275,7 @@ fun ZoomableSvgImage(
                         val scaleY = size.height / svgHeight
                         initialScale = minOf(scaleX, scaleY) * 1.0f // add some margin if required
                     }
+                    .fillMaxSize()
             ) {
                 // canvas background
 //                drawRect(Color.Yellow)
@@ -244,11 +287,6 @@ fun ZoomableSvgImage(
 //                    // Calculate initial centering
                     val viewportWidth = size.width
                     val viewportHeight = size.height
-
-//                    // Center the SVG in the available space (before any user zooming/panning)
-//                    val initialScaleX = viewportWidth / svgWidth
-//                    val initialScaleY = viewportHeight / svgHeight
-//                    val initialScale = minOf(initialScaleX, initialScaleY)
 
                     val centeringX = (viewportWidth - svgWidth * initialScale) / 2f
                     val centeringY = (viewportHeight - svgHeight * initialScale) / 2f
@@ -267,6 +305,8 @@ fun ZoomableSvgImage(
                         // Set up render options
                         val renderOptions = RenderOptions()
 
+                        val customCss = mutableListOf<String>()
+
                         // Apply tint if specified
                         tintColor?.let {
                             val color = String.format("#%02X%02X%02X%02X",
@@ -274,16 +314,19 @@ fun ZoomableSvgImage(
                                 (it.green * 255).toInt(),
                                 (it.blue * 255).toInt(),
                                 (it.alpha * 255).toInt())
-                            Log.i("SVG", color)
-                            renderOptions
-                                .css(
-                                    "svg { fill: $color;} path { color: $color;}")
+                            customCss.add("svg { fill: $color;}")
+                            customCss.add("path { color: $color;}")
                         }
 
                         // use custom font for all text items
-                        renderOptions
-                            .css(
-                                "text { font-family: Edwin-Roman;}")
+                        customFont?.let {
+                            customCss.add("text { font-family: $it;}")
+                        }
+
+                        // apply all custom css settings in one operation
+                        if(customCss.size > 0) {
+                            renderOptions.css(customCss.joinToString(" "))
+                        }
 
                         // Render the SVG
                         val timeMillis = measureTimeMillis {
