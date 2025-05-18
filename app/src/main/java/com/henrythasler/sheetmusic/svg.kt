@@ -26,10 +26,12 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.core.graphics.withTranslation
 import com.caverock.androidsvg.RenderOptions
 import com.caverock.androidsvg.SVG
+import com.caverock.androidsvg.SimpleAssetResolver
 
 /**
  * A composable function that renders SVG content using AndroidSVG library.
@@ -142,9 +144,11 @@ fun ZoomableSvgImage(
     maxScale: Float = 10f,
     panLimitFactor: Float = 0.8f,  // Controls how far you can pan (0.5 = half SVG can go off-screen)
 ) {
+    val context = LocalContext.current
     val svg = remember(svgString) {
         try {
-            Log.i("SVG", "getFromString")
+            Log.i("SVG", "rendering SVG-data (${svgString.length / 1024} KiB)")
+            SVG.registerExternalFileResolver(SimpleAssetResolver(context.assets));
             SVG.getFromString(svgString)
         } catch (e: Exception) {
             e.printStackTrace()
@@ -230,7 +234,7 @@ fun ZoomableSvgImage(
                     }
             ) {
                 // canvas background
-                drawRect(Color.Yellow)
+//                drawRect(Color.Yellow)
 
                 drawIntoCanvas { canvas ->
                     Log.i("Canvas", "drawIntoCanvas")
@@ -256,7 +260,7 @@ fun ZoomableSvgImage(
 
                         // background for SVG
                         nativeCanvas.drawRect(0f, 0f, svgWidth, svgHeight, Paint(Paint.ANTI_ALIAS_FLAG).apply { color =
-                            0x80ffa000.toInt()
+                            0x10000000.toInt()
                         })
 
                         // Set up render options

@@ -43,10 +43,14 @@ extern "C" JNIEXPORT jstring JNICALL
 Java_com_henrythasler_sheetmusic_VerovioViewModel_renderData(JNIEnv *env, jobject thiz, jstring data) {
     const char* mei_data = env->GetStringUTFChars(data, nullptr);
 
+//    __android_log_print(ANDROID_LOG_DEBUG, "Verovio", "%X %X %X %X", mei_data[0x422], mei_data[0x423], mei_data[0x424], mei_data[0x425]);
+
     std::string svg_data = tk.RenderData(mei_data, R"({
         "adjustPageHeight": true,
         "adjustPageWidth": true,
+        "smuflTextFont": "none",
         "footer": "none",
+        "header": "none",
         "pageMarginLeft": 50,
         "pageMarginRight": 50,
         "pageMarginTop": 10,

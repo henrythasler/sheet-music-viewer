@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-model href="https://music-encoding.org/schema/5.1/mei-all.rng" type="application/xml" schematypens="http://relaxng.org/ns/structure/1.0"?>
+<?xml-model href="https://music-encoding.org/schema/5.1/mei-all.rng" type="application/xml" schematypens="http://purl.oclc.org/dsdl/schematron"?>
+<mei xmlns="http://www.music-encoding.org/ns/mei" meiversion="5.1">
+   <meiHead>
+      <fileDesc>
+         <titleStmt>
+            <title />
+         </titleStmt>
+         <pubStmt>
+            <date isodate="2025-05-18-08:34:56" />
+         </pubStmt>
+      </fileDesc>
+      <encodingDesc>
+         <appInfo>
+            <application xml:id="verovio" version="5.2.0-05b68c4">
+               <name>Verovio (5.2.0-05b68c4)</name>
+            </application>
+         </appInfo>
+         <projectDesc>
+            <p>MEI encoded with Verovio</p>
+         </projectDesc>
+      </encodingDesc>
+   </meiHead>
+   <music>
+      <body>
+         <mdiv>
+            <score>
+               <scoreDef>
+                  <staffGrp>
+                     <staffDef n="1" lines="5" ppq="2" clef.shape="G" clef.line="2" keysig="0" />
+                  </staffGrp>
+               </scoreDef>
+               <section>
+                  <measure right="end" n="1">
+                     <staff n="1">
+                        <layer n="1">
+                           <mRest />
+                        </layer>
+                     </staff>
+                     <tempo place="above" staff="1" tstamp="1" midi.bpm="80" mm="80" mm.unit="4">
+                        <rend glyph.auth="smufl"></rend> = 80</tempo>
+                  </measure>
+               </section>
+            </score>
+         </mdiv>
+      </body>
+   </music>
+</mei>
