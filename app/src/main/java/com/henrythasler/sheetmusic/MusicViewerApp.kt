@@ -63,7 +63,7 @@ fun MusicViewerApp(
         ) { innerPadding ->
             NavHost(
                 navController = navController,
-                startDestination = Screen.Browser.route,
+                startDestination = Screen.Notation.createRoute("mei/tempo/tempo-003.mei", "tempo-003.mei"),
                 modifier = Modifier.padding(innerPadding)
             ) {
                 composable(
