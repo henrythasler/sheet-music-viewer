@@ -57,6 +57,12 @@ fun MusicViewerApp(
         )
 
         Scaffold(
+            topBar = {
+                TopNavigationBar(
+                    navController = navController,
+                    viewModel = viewModel,
+                )
+            }
 //            bottomBar = {
 //                BottomNavigationBar(navController = navController, items = items)
 //            }

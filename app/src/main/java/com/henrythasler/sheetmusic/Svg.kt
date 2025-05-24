@@ -12,6 +12,7 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -40,6 +41,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toSize
 import androidx.core.graphics.withTranslation
 import com.caverock.androidsvg.RenderOptions
@@ -529,6 +531,8 @@ fun PannableCachedSvgImage(
     // Load SVG in a coroutine when the composable enters composition
     LaunchedEffect(canvasSize) {
         delay(100)
+        Log.d("Canvas","viewportSize=$viewportSize, canvasSize=$canvasSize, svgSize=$svgSize")
+        Log.d("Transform","scale=$scale, offset=$offset, initialScale=$initialScale")
 
         if (canvasSize != Size.Zero) {
             Log.d("SVG", "render SVG to canvas $canvasSize")
@@ -551,7 +555,7 @@ fun PannableCachedSvgImage(
                     initialScale = minOf(scaleX, scaleY) * 1.0f // add some margin if required
                 }
             }
-            Log.d("SVG", "renderToImageBitmap() took $timeMillis ms")
+            Log.d("SVG", "renderToImageBitmap(${svgSize.width}x${svgSize.height}) took $timeMillis ms")
         }
     }
 
@@ -607,8 +611,8 @@ fun PannableCachedSvgImage(
                         // Update scale and offset
                         scale = newScale
                         offset = Offset(
-                            (newOffset.x + pan.x), //.coerceIn(-maxPanX, maxPanX),
-                            (newOffset.y + pan.y) //.coerceIn(-maxPanY, maxPanY)
+                            (newOffset.x + pan.x).coerceIn(-maxPanX, maxPanX),
+                            (newOffset.y + pan.y).coerceIn(-maxPanY, maxPanY)
                         )
                     }
                 }
@@ -639,9 +643,6 @@ fun PannableCachedSvgImage(
 
                         val centeringX = (canvasSize.width - svgSize.width * initialScale) / 2f
                         val centeringY = (canvasSize.height - svgSize.height * initialScale) / 2f
-
-                        Log.d("Canvas","viewportSize=$viewportSize, canvasSize=$canvasSize, svgSize=$svgSize")
-                        Log.d("Transform","scale=$scale, offset=$offset, initialScale=$initialScale")
 
                         withTransform({
                             translate(centeringX, centeringY)
