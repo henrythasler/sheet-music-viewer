@@ -1,7 +1,6 @@
 package com.henrythasler.sheetmusic
 
 import android.content.Context
-import android.graphics.Bitmap
 import android.graphics.Paint
 import android.graphics.Picture
 import android.graphics.Typeface
@@ -11,8 +10,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -23,7 +23,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.composed
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Offset
@@ -43,17 +42,17 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toSize
+import androidx.core.graphics.createBitmap
 import androidx.core.graphics.withTranslation
 import com.caverock.androidsvg.RenderOptions
 import com.caverock.androidsvg.SVG
 import com.caverock.androidsvg.SVGExternalFileResolver
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import java.nio.file.Paths
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.system.measureTimeMillis
-import androidx.core.graphics.createBitmap
-import kotlinx.coroutines.delay
 
 /**
  * A composable function that renders SVG content using AndroidSVG library.
@@ -386,6 +385,17 @@ fun ZoomableSvgImage(
 object SvgCache {
     private val cache = ConcurrentHashMap<String, ImageBitmap>()
 
+    fun getCacheKey(
+        identifier: String,
+        baseWidth: Int,
+        baseHeight: Int,
+        scaleFactor: Float
+    ): String {
+        val actualWidth = (baseWidth * scaleFactor).toInt()
+        val actualHeight = (baseHeight * scaleFactor).toInt()
+        return "$identifier-$actualWidth-$actualHeight"
+    }
+
     fun get(key: String): ImageBitmap? = cache[key]
 
     fun put(key: String, bitmap: ImageBitmap) {
@@ -395,7 +405,29 @@ object SvgCache {
     fun clear() {
         cache.clear()
     }
+
+    fun getSize(): Int = cache.size
+
+    // Remove old cached versions to manage memory
+    fun evictOldVersions(identifier: String, keepScaleFactor: Float, baseWidth: Int, baseHeight: Int) {
+        val keepKey = getCacheKey(identifier, baseWidth, baseHeight, keepScaleFactor)
+        val keysToRemove = cache.keys.filter {
+            it.startsWith("$identifier-") && it != keepKey
+        }
+        keysToRemove.forEach { cache.remove(it) }
+    }
 }
+
+/**
+ * Configuration for dynamic resolution rendering
+ */
+data class ResolutionConfig(
+    val minScale: Float = 0.1f,
+    val maxScale: Float = 10f,
+    val scaleThresholds: List<Float> = listOf(0.5f, 1f, 2f, 4f, 8f),
+    val debounceDelayMs: Long = 300L, // Delay before rendering higher resolution
+    val maxCachedVersions: Int = 3 // Maximum number of different resolution versions to keep
+)
 
 /**
  * Loads an SVG from assets and renders it to a bitmap
@@ -528,6 +560,8 @@ fun PannableCachedSvgImage(
         FastFontResolver(context, "fonts");
     }
 
+    var timeMillis by remember { mutableStateOf<Long?>(null) }
+
     // Load SVG in a coroutine when the composable enters composition
     LaunchedEffect(canvasSize) {
         delay(100)
@@ -537,7 +571,7 @@ fun PannableCachedSvgImage(
         if (canvasSize != Size.Zero) {
             Log.d("SVG", "render SVG to canvas $canvasSize")
 
-            val timeMillis = measureTimeMillis {
+            timeMillis = measureTimeMillis {
                 imageBitmap = renderToImageBitmap(
                     context = context,
                     assetName = assetName,
@@ -660,6 +694,19 @@ fun PannableCachedSvgImage(
                 }
         ) {
         }
-
+        Column(
+            modifier = Modifier
+//                .padding(6.dp)
+                .background(Color.hsv(0f, 0f, 1f, 0.5f)),
+        ) {
+            Text(
+                modifier = Modifier
+                    .padding(6.dp),
+                text = "$assetName\nScale: ${scale}, $offset\nsvg: $svgSize\ncanvas: $canvasSize"
+            )
+            Text(
+                text = "render(${svgSize.width}x${svgSize.height}) in $timeMillis ms"
+            )
+        }
     }
 }

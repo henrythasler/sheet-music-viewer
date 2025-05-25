@@ -46,9 +46,11 @@ Java_com_henrythasler_sheetmusic_VerovioViewModel_renderData(JNIEnv *env, jobjec
 //    __android_log_print(ANDROID_LOG_DEBUG, "Verovio", "%X %X %X %X", mei_data[0x422], mei_data[0x423], mei_data[0x424], mei_data[0x425]);
 
     std::string svg_data = tk.RenderData(mei_data, R"({
+        "breaks": "auto",
         "adjustPageHeight": true,
         "adjustPageWidth": true,
         "smuflTextFont": "none",
+        "header": "none",
         "footer": "none",
         "lyricSize": 3,
         "multiRestStyle": "block",
