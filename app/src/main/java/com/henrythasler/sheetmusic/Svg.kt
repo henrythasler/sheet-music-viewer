@@ -382,17 +382,16 @@ fun ZoomableSvgImage(
 /**
  * An enhanced SVG cache that supports adding bounds information for panning
  */
-object SvgCache {
+object DynamicSvgCache {
     private val cache = ConcurrentHashMap<String, ImageBitmap>()
 
     fun getCacheKey(
         identifier: String,
-        baseWidth: Int,
-        baseHeight: Int,
+        baseSize: Size,
         scaleFactor: Float
     ): String {
-        val actualWidth = (baseWidth * scaleFactor).toInt()
-        val actualHeight = (baseHeight * scaleFactor).toInt()
+        val actualWidth = (baseSize.width * scaleFactor).toInt()
+        val actualHeight = (baseSize.height * scaleFactor).toInt()
         return "$identifier-$actualWidth-$actualHeight"
     }
 
@@ -409,8 +408,12 @@ object SvgCache {
     fun getSize(): Int = cache.size
 
     // Remove old cached versions to manage memory
-    fun evictOldVersions(identifier: String, keepScaleFactor: Float, baseWidth: Int, baseHeight: Int) {
-        val keepKey = getCacheKey(identifier, baseWidth, baseHeight, keepScaleFactor)
+    fun evictOldVersions(
+        identifier: String,
+        baseSize: Size,
+        keepScaleFactor: Float,
+    ) {
+        val keepKey = getCacheKey(identifier, baseSize, keepScaleFactor)
         val keysToRemove = cache.keys.filter {
             it.startsWith("$identifier-") && it != keepKey
         }
@@ -438,7 +441,7 @@ data class ResolutionConfig(
  * @param canvasSize
  * @return The rendered bitmap as an ImageBitmap
  */
-suspend fun renderToImageBitmap(
+suspend fun imageBitmapFromSvg(
     context: Context,
     assetName: String,
     svgString: String,
@@ -450,10 +453,11 @@ suspend fun renderToImageBitmap(
     val cacheKey = "$assetName-${canvasSize.width}-${canvasSize.height}"
 
     // Check if the SVG is already cached
-    SvgCache.get(cacheKey)
+    DynamicSvgCache.get(cacheKey)
         ?.let { return@withContext it }
 
     // Load and render the SVG
+    // FIXME: add cache for svg-object
     val svg = try {
         Log.i("SVG", "rendering SVG-data (${svgString.length / 1024} KiB)")
         SVG.registerExternalFileResolver(fontResolver);
@@ -473,21 +477,21 @@ suspend fun renderToImageBitmap(
         val customCss = mutableListOf<String>()
 
         // Apply tint if specified
-        tintColor?.let {
+        tintColor?.let { tintColor ->
             val color = String.format(
                 "#%02X%02X%02X%02X",
-                (it.red * 255).toInt(),
-                (it.green * 255).toInt(),
-                (it.blue * 255).toInt(),
-                (it.alpha * 255).toInt()
+                (tintColor.red * 255).toInt(),
+                (tintColor.green * 255).toInt(),
+                (tintColor.blue * 255).toInt(),
+                (tintColor.alpha * 255).toInt()
             )
             customCss.add("svg { fill: $color;}")
             customCss.add("path { color: $color;}")
         }
 
         // use custom font for all text items
-        customFont?.let {
-            customCss.add("text { font-family: $it;}")
+        customFont?.let { font ->
+            customCss.add("text { font-family: $font;}")
         }
 
         // apply all custom css settings in one operation
@@ -510,7 +514,7 @@ suspend fun renderToImageBitmap(
 
         // Cache the rendered bitmap
         val imageBitmap = bitmap.asImageBitmap()
-        SvgCache.put(cacheKey, imageBitmap)
+        DynamicSvgCache.put(cacheKey, imageBitmap)
 
         return@withContext imageBitmap
     }
@@ -572,7 +576,7 @@ fun PannableCachedSvgImage(
             Log.d("SVG", "render SVG to canvas $canvasSize")
 
             timeMillis = measureTimeMillis {
-                imageBitmap = renderToImageBitmap(
+                imageBitmap = imageBitmapFromSvg(
                     context = context,
                     assetName = assetName,
                     svgString = svgString,
