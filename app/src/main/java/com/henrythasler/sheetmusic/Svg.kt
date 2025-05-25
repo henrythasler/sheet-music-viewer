@@ -245,6 +245,15 @@ fun ZoomableSvgImage(
         Box(
             modifier = modifier
                 .clipToBounds()
+                .background(Color.Magenta)
+                .pointerInput(Unit) {
+                    detectTapGestures(
+                        onDoubleTap = {
+                            offset = Offset.Zero
+                            scale = 1f
+                        }
+                    )
+                }
                 // Handle pinch-zoom and pan gestures
                 .pointerInput(Unit) {
                     detectTransformGestures { centroid, pan, zoom, _ ->
@@ -304,6 +313,9 @@ fun ZoomableSvgImage(
                     .fillMaxSize()
                     .drawWithCache {
                         onDrawWithContent {
+                            // Viewport background
+                            drawRect(Color.Yellow, Offset.Zero, canvasSize)
+
                             drawIntoCanvas { canvas ->
                                 Log.i("Canvas", "drawIntoCanvas")
                                 val nativeCanvas = canvas.nativeCanvas
@@ -321,16 +333,8 @@ fun ZoomableSvgImage(
                                     // Apply initial centering transform
                                     scale(initialScale, initialScale)
 
-                                    // background for SVG
-                                    nativeCanvas.drawRect(
-                                        0f,
-                                        0f,
-                                        svgWidth,
-                                        svgHeight,
-                                        Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                                            color =
-                                                0x08000000.toInt()
-                                        })
+                                    // SVG background (grey)
+                                    drawRect(Color.hsv(0f, 0f, 0.95f), Offset.Zero, Size(svgWidth, svgHeight))
 
                                     // Set up render options
                                     val renderOptions = RenderOptions()
