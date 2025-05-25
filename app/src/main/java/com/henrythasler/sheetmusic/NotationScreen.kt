@@ -25,12 +25,21 @@ fun NotationScreen(
     val svgData by viewModel.svgData.collectAsStateWithLifecycle()
 
     if (svgData.isNotEmpty()) {
-        PannableCachedSvgImage(
+//        PannableCachedSvgImage(
+//            assetName = filename,
+//            svgString = svgData,
+//            maxScale = 30f,
+//            customFont = "Edwin-Roman",
+////                tintColor = Color.hsv(80f, 1f, .5f),
+//            modifier = Modifier
+//                .fillMaxSize(),
+//        )
+
+        ScalableCachedSvgImage(
             assetName = filename,
             svgString = svgData,
-            maxScale = 30f,
+            config = ResolutionConfig(0.2f, 12f, listOf(0.25f, 0.5f, 1f, 2f, 4f)),
             customFont = "Edwin-Roman",
-//                tintColor = Color.hsv(80f, 1f, .5f),
             modifier = Modifier
                 .fillMaxSize(),
         )

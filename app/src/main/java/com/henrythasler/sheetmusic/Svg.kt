@@ -17,6 +17,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -40,6 +41,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toSize
 import androidx.core.graphics.createBitmap
@@ -47,8 +49,11 @@ import androidx.core.graphics.withTranslation
 import com.caverock.androidsvg.RenderOptions
 import com.caverock.androidsvg.SVG
 import com.caverock.androidsvg.SVGExternalFileResolver
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.nio.file.Paths
 import java.util.concurrent.ConcurrentHashMap
@@ -427,10 +432,358 @@ object DynamicSvgCache {
 data class ResolutionConfig(
     val minScale: Float = 0.1f,
     val maxScale: Float = 10f,
-    val scaleThresholds: List<Float> = listOf(0.5f, 1f, 2f, 4f, 8f),
+    val scaleThresholds: List<Float> = listOf(0.5f, 1f, 2f),
     val debounceDelayMs: Long = 300L, // Delay before rendering higher resolution
     val maxCachedVersions: Int = 3 // Maximum number of different resolution versions to keep
 )
+
+
+/**
+ * Loads an SVG and renders it at a specific scale factor
+ */
+suspend fun imageBitmapFromSvgAtScale(
+    context: Context,
+    assetName: String,
+    svgString: String,
+    baseSize: Size?,
+    scaleFactor: Float,
+    fontResolver: FastFontResolver,
+    tintColor: Color? = null,
+    customFont: String? = null,
+): ImageBitmap? = withContext(Dispatchers.IO) {
+
+    var cacheKey: String? = null
+
+    baseSize?.let {
+        cacheKey = DynamicSvgCache.getCacheKey(assetName, it, scaleFactor)
+    }
+
+    // Check if the SVG is already cached at this resolution
+    cacheKey?.let { key ->
+        DynamicSvgCache.get(key)?.let {
+            Log.d("SVG", "cacheKey: '$cacheKey' found")
+            return@withContext it
+        }
+    }
+
+    // Load and render the SVG
+    // FIXME: add cache for svg-object
+    val svg = try {
+        Log.i("SVG", "rendering SVG-data (${svgString.length / 1024} KiB)")
+        SVG.registerExternalFileResolver(fontResolver);
+        SVG.getFromString(svgString)
+    } catch (e: Exception) {
+        e.printStackTrace()
+        null
+    }
+
+    svg?.let {
+        // Set up render options
+        val renderOptions = RenderOptions()
+        val customCss = mutableListOf<String>()
+
+        // Apply tint if specified
+        tintColor?.let { tintColor ->
+            val color = String.format(
+                "#%02X%02X%02X%02X",
+                (tintColor.red * 255).toInt(),
+                (tintColor.green * 255).toInt(),
+                (tintColor.blue * 255).toInt(),
+                (tintColor.alpha * 255).toInt()
+            )
+            customCss.add("svg { fill: $color;}")
+            customCss.add("path { color: $color;}")
+        }
+
+        // use custom font for all text items
+        customFont?.let { font ->
+            customCss.add("text { font-family: $font;}")
+        }
+
+        // apply all custom css settings in one operation
+        if (customCss.size > 0) {
+            renderOptions.css(customCss.joinToString(" "))
+        }
+
+//        val svgWidth = if (it.documentWidth != -1f) it.documentWidth else canvasSize.width
+//        val svgHeight = if (it.documentHeight != -1f) it.documentHeight else canvasSize.height
+        val actualWidth = if (baseSize != null) (baseSize.width * scaleFactor) else if (it.documentWidth != -1f) it.documentWidth else 100f
+        val actualHeight = if (baseSize != null) (baseSize.height * scaleFactor) else if (it.documentHeight != -1f) it.documentHeight else 100f
+
+        Log.d("Cache", "baseSize: $baseSize, actualSize: ${actualWidth}x${actualHeight}")
+
+        val picture = Picture()
+        val canvas = picture.beginRecording(actualWidth.toInt(), actualHeight.toInt())
+
+        // Set SVG viewport to the target resolution
+        it.setDocumentWidth(actualWidth)
+        it.setDocumentHeight(actualHeight)
+        it.renderToCanvas(canvas, renderOptions)
+
+        picture.endRecording()
+
+        // Convert Picture to Bitmap
+        val bitmap = createBitmap(actualWidth.toInt(), actualHeight.toInt())
+        val bitmapCanvas = android.graphics.Canvas(bitmap)
+        bitmapCanvas.drawPicture(picture)
+
+        // Cache the rendered bitmap
+        val imageBitmap = bitmap.asImageBitmap()
+        
+        // use current size to generate cache key
+        // FIXME: derive from baseSize
+        cacheKey = DynamicSvgCache.getCacheKey(assetName, Size(actualWidth, actualHeight), 1f)
+
+        cacheKey?.let { key ->
+            Log.d("SVG", "adding '$key' to cache")
+            DynamicSvgCache.put(key, imageBitmap)
+        }
+
+        return@withContext imageBitmap
+    }
+    return@withContext null
+}
+
+/**
+ * Determines the optimal scale factor for rendering based on current zoom level
+ */
+fun getOptimalRenderScale(currentScale: Float, thresholds: List<Float>): Float {
+    // Find the smallest threshold that is >= currentScale
+    return thresholds.lastOrNull { it <= currentScale } ?: thresholds.last()
+}
+
+/**
+ * A composable that loads and displays an SVG from assets with panning support
+ */
+@Composable
+fun ScalableCachedSvgImage(
+    assetName: String,
+    svgString: String,
+    modifier: Modifier = Modifier,
+    config: ResolutionConfig = ResolutionConfig(),
+    panLimitFactor: Float = 0.5f,  // Controls how far you can pan (0.5 = half SVG can go off-screen)
+    contentScale: ContentScale = ContentScale.Fit,
+    enablePanning: Boolean = true,
+    tintColor: Color? = null,
+    customFont: String? = null,
+    onScaleChange: ((Float) -> Unit)? = null
+) {
+    val context = LocalContext.current
+//    val density = LocalDensity.current
+    val coroutineScope = remember { CoroutineScope(Dispatchers.Main) }
+
+    // Convert dp to pixels
+    var baseSize by remember { mutableStateOf<Size?>(null)}
+    var canvasSize by remember { mutableStateOf(Size.Zero) }
+    var viewportSize by remember { mutableStateOf(Size.Zero) }
+
+    // State for transformations
+    var offset by remember { mutableStateOf(Offset.Zero) }
+    var scale by remember { mutableFloatStateOf(1f) }
+
+    // Current bitmap and render job
+    var currentBitmap by remember { mutableStateOf<ImageBitmap?>(null) }
+    var currentRenderScale by remember { mutableFloatStateOf(1f) }
+    var renderJob by remember { mutableStateOf<Job?>(null) }
+
+    // Calculate optimal render scale based on current zoom
+    val optimalRenderScale by remember {
+        derivedStateOf {
+            getOptimalRenderScale(scale, config.scaleThresholds)
+        }
+    }
+
+    val fastFontResolver = remember(context) {
+        FastFontResolver(context, "fonts");
+    }
+
+    // Load initial bitmap
+    LaunchedEffect(assetName, baseSize) {
+        currentBitmap = imageBitmapFromSvgAtScale(
+            context = context,
+            assetName = assetName,
+            svgString = svgString,
+            baseSize = null,
+            scaleFactor = 1f,
+            fontResolver = fastFontResolver
+        )
+
+        currentBitmap?.let {
+            currentRenderScale = 1f
+            baseSize = Size(it.width.toFloat(), it.height.toFloat())
+        }
+    }
+
+    // Handle resolution changes with debouncing
+    LaunchedEffect(optimalRenderScale) {
+        baseSize?.let {
+            if (optimalRenderScale != currentRenderScale) {
+                Log.d("SVG", "currentRenderScale: $currentRenderScale, optimalRenderScale: $optimalRenderScale")
+                // Cancel previous render job
+                renderJob?.cancel()
+
+                // Start new render job with debounce
+                renderJob = coroutineScope.launch {
+                    delay(config.debounceDelayMs)
+
+                    val newBitmap = imageBitmapFromSvgAtScale(
+                        context = context,
+                        assetName = assetName,
+                        svgString = svgString,
+                        baseSize = it,
+                        scaleFactor = optimalRenderScale,
+                        fontResolver = fastFontResolver
+                    )
+
+                    currentBitmap = newBitmap
+                    currentRenderScale = optimalRenderScale
+
+//                    // Clean up old cached versions to manage memory
+//                    if (DynamicSvgCache.getSize() > config.maxCachedVersions * 2) {
+//                        DynamicSvgCache.evictOldVersions(
+//                            assetName,
+//                            it,
+//                            optimalRenderScale,
+//                        )
+//                    }
+
+                    Log.d("Bitmap", "currentBitmap: ${currentBitmap?.width}x${currentBitmap?.height}")
+                }
+            }
+        }
+    }
+
+    // Notify scale changes
+    LaunchedEffect(scale) {
+        onScaleChange?.invoke(scale)
+    }
+
+    // Cleanup on dispose
+    DisposableEffect(assetName) {
+        onDispose {
+            renderJob?.cancel()
+        }
+    }
+
+    Box(
+        modifier = modifier
+            .clipToBounds()
+            .background(Color.Magenta)
+            .pointerInput(Unit) {
+                detectTapGestures(
+                    onDoubleTap = {
+                        offset = Offset.Zero
+                        scale = 1f
+                    }
+                )
+            }
+            .pointerInput(Unit) {
+                detectTransformGestures { centroid, pan, zoom, _ ->
+                    // Calculate new scale with constraints
+                    val newScale = (scale * zoom).coerceIn(config.minScale, config.maxScale)
+
+                    // Calculate the center of the canvas
+                    val canvasCenterX = canvasSize.width / 2f
+                    val canvasCenterY = canvasSize.height / 2f
+
+                    // Calculate the position relative to the center of the canvas
+                    val relativeX = centroid.x - canvasCenterX
+                    val relativeY = centroid.y - canvasCenterY
+
+                    // Calculate the focus point considering both the current offset and the centered position
+                    val focusX = relativeX - offset.x
+                    val focusY = relativeY - offset.y
+
+                    // Calculate new offset to keep the pinch centroid at the same location after scaling
+                    val newOffset = Offset(
+                        offset.x + focusX - focusX * (newScale / scale),
+                        offset.y + focusY - focusY * (newScale / scale)
+                    )
+
+                    // Calculate maximum allowed panning in each direction
+                    // Allow panning until half of the SVG is off screen (adjust divisor as needed)
+//                    val maxPanX = svgSize.width * initialScale * panLimitFactor * newScale
+//                    val maxPanY = svgSize.height * initialScale * panLimitFactor * newScale
+
+                    // Update scale and offset
+                    scale = newScale
+                    offset = Offset(
+                        (newOffset.x + pan.x), //.coerceIn(-maxPanX, maxPanX),
+                        (newOffset.y + pan.y), //.coerceIn(-maxPanY, maxPanY)
+                    )
+                }
+            }
+    ) {
+        Canvas(
+            modifier = Modifier
+                .fillMaxSize()
+                .graphicsLayer {
+                    // Apply current scale and offset
+                    scaleX = scale
+                    scaleY = scale
+                    translationX = offset.x
+                    translationY = offset.y
+                }
+                .onSizeChanged { size ->
+                    // Update canvas size when it changes
+                    viewportSize = size.toSize()
+
+                    if (canvasSize == Size.Zero) {
+                        canvasSize = viewportSize
+                    }
+                }
+                .drawWithCache {
+                    onDrawWithContent {
+                        // Viewport background
+                        drawRect(Color.Yellow, Offset.Zero, canvasSize)
+
+                        baseSize?.let { svgSize ->
+                            // Calculate initial scale to fit the SVG
+                            val scaleX = canvasSize.width / svgSize.width
+                            val scaleY = canvasSize.height / svgSize.height
+                            val initialScale =
+                                minOf(scaleX, scaleY) * 1.0f // add some margin if required
+
+                            val centeringX = (canvasSize.width - svgSize.width * initialScale) / 2f
+                            val centeringY =
+                                (canvasSize.height - svgSize.height * initialScale) / 2f
+
+                            withTransform({
+                                translate(centeringX, centeringY)
+                                scale(initialScale / currentRenderScale, Offset.Zero)
+                            }) {
+                                // actual content
+                                currentBitmap?.let { bitmap ->
+                                    // SVG background (grey)
+                                    drawRect(
+                                        Color.hsv(0f, 0f, 0.95f),
+                                        Offset.Zero,
+                                        Size(bitmap.width.toFloat(), bitmap.height.toFloat())
+                                    )
+                                    drawImage(image = bitmap)
+                                    Log.d("Bitmap", "bitmap: ${bitmap.width}x${bitmap.height}")
+                                }
+                            }
+                        }
+                    }
+                }
+        ) {
+        }
+        Column(
+            modifier = Modifier
+//                .padding(6.dp)
+                .background(Color.hsv(0f, 0f, 1f, 0.5f)),
+        ) {
+            Text(
+                modifier = Modifier
+                    .padding(6.dp),
+                text = "$assetName\nScale: ${scale}, $offset\nbaseSize: $baseSize\ncanvas: $canvasSize\ncurrentRenderScale: $currentRenderScale\n" +
+                        "optimalRenderScale: $optimalRenderScale\nBitmap: ${currentBitmap?.width}x${currentBitmap?.height}"
+            )
+        }
+    }
+}
+
 
 /**
  * Loads an SVG from assets and renders it to a bitmap
@@ -687,7 +1040,7 @@ fun PannableCachedSvgImage(
                             scale(initialScale, Offset.Zero)
                         }) {
                             // SVG background (grey)
-                            drawRect(Color.hsv(0f,0f, 0.95f), Offset.Zero, svgSize)
+                            drawRect(Color.hsv(0f, 0f, 0.95f), Offset.Zero, svgSize)
 
                             // actual content
                             imageBitmap?.let { bitmap ->
