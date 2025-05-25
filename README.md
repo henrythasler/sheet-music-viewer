@@ -1,4 +1,4 @@
-# sheet-music-viewer
+# Verovio Demo App
 
 Show [MEI](https://music-encoding.org/about/)- or MusicXML-Files rendered with [Verovio](https://www.verovio.org/index.xhtml) in an Android App.
 
@@ -18,7 +18,6 @@ Show [MEI](https://music-encoding.org/about/)- or MusicXML-Files rendered with [
 ## Known Issues
 
 - In App `build.gradle.kts`: Cmake requires additional `cppFlags += "-llog"` to avoid linker errors for Android log output.
-- git-commit header in verovio folder must be generated manually
 
 ## Resources
 
