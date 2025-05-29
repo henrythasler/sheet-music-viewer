@@ -35,23 +35,23 @@ fun NotationScreen(
 //        )
 
 
-        PannableCachedSvgImage(
-            assetName = filename,
-            svgString = svgData,
-            maxScale = 30f,
-            customFont = "Edwin-Roman",
-//                tintColor = Color.hsv(80f, 1f, .5f),
-            modifier = Modifier
-                .fillMaxSize(),
-        )
-
-//        ScalableCachedSvgImage(
+//        PannableCachedSvgImage(
 //            assetName = filename,
 //            svgString = svgData,
-//            config = ResolutionConfig(0.2f, 12f, listOf(0.25f, 0.5f, 1f, 2f, 4f)),
+//            maxScale = 30f,
 //            customFont = "Edwin-Roman",
+////                tintColor = Color.hsv(80f, 1f, .5f),
 //            modifier = Modifier
 //                .fillMaxSize(),
 //        )
+
+        ScalableCachedSvgImage(
+            modifier = Modifier
+                .fillMaxSize(),
+            assetName = filename,
+            svgString = svgData,
+            svgConfig = SvgConfig(null, "Edwin-Roman"),
+            canvasConfig = CanvasConfig(0.25f, 32f, 200L),
+        )
     }
 }
