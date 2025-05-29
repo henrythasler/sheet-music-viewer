@@ -3,6 +3,7 @@ package com.henrythasler.sheetmusic
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -13,13 +14,13 @@ import androidx.navigation.NavHostController
 fun NotationScreen(
     navController: NavHostController,
     viewModel: VerovioViewModel,
-    folderPath: String,
-    filename: String
+    assetPath: String,
+    assetName: String
 ) {
     val context = LocalContext.current
 
-    LaunchedEffect(true) {
-        viewModel.renderAsset(context, folderPath)
+    LaunchedEffect(Unit) {
+        viewModel.renderAsset(context, assetPath)
     }
 
     val svgData by viewModel.svgData.collectAsStateWithLifecycle()
@@ -48,7 +49,7 @@ fun NotationScreen(
         ScalableCachedSvgImage(
             modifier = Modifier
                 .fillMaxSize(),
-            assetName = filename,
+            assetName = assetName,
             svgString = svgData,
             svgConfig = SvgConfig(null, "Edwin-Roman"),
             canvasConfig = CanvasConfig(0.25f, 32f, 200L),

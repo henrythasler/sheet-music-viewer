@@ -86,17 +86,17 @@ fun MusicViewerApp(
                 ) { backStackEntry ->
                     // Extract and decode the arguments
                     val encodedFolderPath = backStackEntry.arguments?.getString("encodedFolderPath") ?: ""
-                    val filename = backStackEntry.arguments?.getString("filename") ?: ""
+                    val encodedFilename = backStackEntry.arguments?.getString("filename") ?: ""
 
                     // Decode the folder path
-                    val folderPath = Uri.decode(encodedFolderPath)
-                    val decodedFilename = Uri.decode(filename)
+                    val assetPath = Uri.decode(encodedFolderPath)
+                    val assetName = Uri.decode(encodedFilename)
 
                     NotationScreen(
                         navController = navController,
                         viewModel = viewModel,
-                        folderPath = folderPath,
-                        filename = decodedFilename
+                        assetPath = assetPath,
+                        assetName = assetName
                     )
                 }
             }

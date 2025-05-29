@@ -38,6 +38,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toSize
 import androidx.core.graphics.createBitmap
+import com.caverock.androidsvg.RenderOptions
 import com.caverock.androidsvg.SVG
 import com.caverock.androidsvg.SVGExternalFileResolver
 import kotlinx.coroutines.CoroutineScope
@@ -109,6 +110,7 @@ suspend fun imageBitmapFromSvgAtScale(
     canvasSize: Size = Size.Zero,
     offset: Offset = Offset.Zero,
     scale: Float = 1.0f,
+    svgConfig: SvgConfig = SvgConfig(),
     fontResolver: FastFontResolver,
 ): ImageBitmap? = withContext(Dispatchers.IO) {
 
@@ -124,8 +126,11 @@ suspend fun imageBitmapFromSvgAtScale(
     }
 
     svg?.let {
-        val svgSize = Size(if (it.documentWidth != -1f) it.documentWidth else canvasSize.width, if (it.documentHeight != -1f) it.documentHeight else canvasSize.height)
-        Log.d("render", "imageBitmapFromSvgAtScale(): svgSize: $svgSize")
+        val svgSize = Size(
+            if (it.documentWidth != -1f) it.documentWidth else canvasSize.width,
+            if (it.documentHeight != -1f) it.documentHeight else canvasSize.height
+        )
+        Log.d("SVG", "imageBitmapFromSvgAtScale(): svgSize: $svgSize")
 
         val picture = Picture()
         val canvas = picture.beginRecording(canvasSize.width.toInt(), canvasSize.height.toInt())
@@ -139,7 +144,7 @@ suspend fun imageBitmapFromSvgAtScale(
         val centeringY = (canvasSize.height - svgSize.height * initialScale) / 2f
 
 
-        Log.d("render", "imageBitmapFromSvgAtScale(): $scale, $offset, Center=$centeringX, $centeringY, initialScale=$initialScale")
+        Log.d("SVG", "imageBitmapFromSvgAtScale(): $scale, $offset, Center=$centeringX, $centeringY, initialScale=$initialScale")
         canvas.translate(offset.x, offset.y)
         canvas.scale(scale, scale, canvasSize.width / 2f, canvasSize.height / 2f)
 
@@ -155,10 +160,37 @@ suspend fun imageBitmapFromSvgAtScale(
             paint
         )
 
+        // Set up render options
+        val renderOptions = RenderOptions()
+        val customCss = mutableListOf<String>()
+
+        // Apply tint if specified
+        svgConfig.tintColor?.let { tintColor ->
+            val color = String.format(
+                "#%02X%02X%02X%02X",
+                (tintColor.red * 255).toInt(),
+                (tintColor.green * 255).toInt(),
+                (tintColor.blue * 255).toInt(),
+                (tintColor.alpha * 255).toInt()
+            )
+            customCss.add("svg { fill: $color;}")
+            customCss.add("path { color: $color;}")
+        }
+
+        // use custom font for all text items
+        svgConfig.customFont?.let { font ->
+            customCss.add("text { font-family: $font;}")
+        }
+
+        // apply all custom css settings in one operation
+        if (customCss.size > 0) {
+            renderOptions.css(customCss.joinToString(" "))
+        }
+
         // Set SVG viewport to the target resolution
         it.setDocumentWidth(canvasSize.width)
         it.setDocumentHeight(canvasSize.height)
-        it.renderToCanvas(canvas)
+        it.renderToCanvas(canvas, renderOptions)
 
         picture.endRecording()
 
@@ -190,7 +222,7 @@ fun ScalableCachedSvgImage(
     val context = LocalContext.current
     val coroutineScope = remember { CoroutineScope(Dispatchers.Main) }
 
-    var baseSize by remember { mutableStateOf<Size?>(null) }
+//    var baseSize by remember { mutableStateOf<Size?>(null) }
     var canvasSize by remember { mutableStateOf(Size.Zero) }
     var viewportSize by remember { mutableStateOf(Size.Zero) }
 
@@ -209,18 +241,7 @@ fun ScalableCachedSvgImage(
         FastFontResolver(context, "fonts");
     }
 
-    // Load initial bitmap
-    LaunchedEffect(Unit) {
-        currentBitmap = imageBitmapFromSvgAtScale(
-            svgString = svgString,
-            canvasSize = canvasSize,
-            scale = scale,
-            offset = offset,
-            fontResolver = fastFontResolver
-        )
-    }
-
-    // Handle resolution changes with debouncing
+    // Re-render with debouncing
     LaunchedEffect(renderOffset, renderScale) {
         renderJob?.cancel()
 
@@ -234,12 +255,15 @@ fun ScalableCachedSvgImage(
                     canvasSize = canvasSize,
                     offset = renderOffset,
                     scale = renderScale,
+                    svgConfig = svgConfig,
                     fontResolver = fastFontResolver
                 )
             }
+
+            // reset viewport transformation as the new bitmap already includes all transformations
             scale = 1f
             offset = Offset.Zero
-            Log.d("Bitmap", "imageBitmapFromSvgAtScale: ${currentBitmap?.width}x${currentBitmap?.height} took $timeMillis ms")
+            Log.d("Canvas", "imageBitmapFromSvgAtScale: ${currentBitmap?.width}x${currentBitmap?.height} took $timeMillis ms")
         }
     }
 
@@ -257,6 +281,7 @@ fun ScalableCachedSvgImage(
             .pointerInput(Unit) {
                 detectTapGestures(
                     onDoubleTap = {
+                        // reset all transformations
                         offset = Offset.Zero
                         scale = 1f
 
@@ -339,7 +364,7 @@ fun ScalableCachedSvgImage(
                         drawRect(Color.Yellow, Offset.Zero, viewportSize)
                         currentBitmap?.let { bitmap ->
                             drawImage(image = bitmap)
-                            Log.d("Bitmap", "bitmap: ${bitmap.width}x${bitmap.height}")
+//                            Log.d("Canvas", "bitmap: ${bitmap.width}x${bitmap.height}")
                         }
                     }
                 }

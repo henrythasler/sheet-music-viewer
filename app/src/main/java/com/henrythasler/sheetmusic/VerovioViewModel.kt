@@ -58,14 +58,14 @@ class VerovioViewModel : ViewModel() {
         viewModelScope.launch {
             val timeMillis = measureTimeMillis {
                 try {
-                    val data = context.assets.open(assetPath).bufferedReader().use { it.readText() }
-                    _svgData.value = renderData(data)
+                    val encodedMusic = context.assets.open(assetPath).bufferedReader().use { it.readText() }
+                    _svgData.value = renderData(encodedMusic)
                 } catch (e: Exception) {
                     "Failed to load asset: ${e.localizedMessage}"
-                }
+                } 
             }
 
-            Log.d("VerovioViewModel", "renderData() took $timeMillis ms")
+            Log.i("Verovio", "Engraving '$assetPath' took $timeMillis ms. (${_svgData.value.length} Bytes)")
         }
     }
 
