@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.paddingFromBaseline
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -57,6 +56,7 @@ data class CanvasConfig(
     val minScale: Float = 0.1f,
     val maxScale: Float = 10f,
     val debounceDelayMs: Long = 300L, // Delay before rendering higher resolution
+    val panLimit: Float = 0.5f,
 )
 
 data class SvgConfig(
@@ -214,7 +214,7 @@ suspend fun imageBitmapFromSvgAtScale(
 @Composable
 fun ScalableCachedSvgImage(
     assetName: String,
-    svgString: String,
+    svgDocument: String,
     modifier: Modifier = Modifier,
     canvasConfig: CanvasConfig = CanvasConfig(),
     svgConfig: SvgConfig = SvgConfig(),
@@ -222,7 +222,7 @@ fun ScalableCachedSvgImage(
     val context = LocalContext.current
     val coroutineScope = remember { CoroutineScope(Dispatchers.Main) }
 
-//    var baseSize by remember { mutableStateOf<Size?>(null) }
+    var baseSize by remember { mutableStateOf<Size?>(null) }
     var canvasSize by remember { mutableStateOf(Size.Zero) }
     var viewportSize by remember { mutableStateOf(Size.Zero) }
 
@@ -251,7 +251,7 @@ fun ScalableCachedSvgImage(
 
             val timeMillis = measureTimeMillis {
                 currentBitmap = imageBitmapFromSvgAtScale(
-                    svgString = svgString,
+                    svgString = svgDocument,
                     canvasSize = canvasSize,
                     offset = renderOffset,
                     scale = renderScale,
@@ -316,8 +316,8 @@ fun ScalableCachedSvgImage(
 
                     // Calculate maximum allowed panning in each direction
                     // Allow panning until half of the SVG is off screen (adjust divisor as needed)
-//                    val maxPanX = svgSize.width * initialScale * panLimitFactor * newScale
-//                    val maxPanY = svgSize.height * initialScale * panLimitFactor * newScale
+//                    val maxPanX = canvasSize.width * canvasConfig.panLimit * newScale
+//                    val maxPanY = canvasSize.height * canvasConfig.panLimit * newScale
 
                     // Update scale and offset
                     scale = newScale

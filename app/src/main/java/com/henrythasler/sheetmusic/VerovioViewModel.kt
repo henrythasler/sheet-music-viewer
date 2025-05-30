@@ -4,12 +4,15 @@ import android.content.Context
 import android.util.Log
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
@@ -67,6 +70,18 @@ class VerovioViewModel : ViewModel() {
 
             Log.i("Verovio", "Engraving '$assetPath' took $timeMillis ms. (${_svgData.value.length} Bytes)")
         }
+    }
+
+    suspend fun engraveMusicAsset(context: Context, assetPath: String): String = withContext(
+        Dispatchers.IO) {
+        try {
+            val encodedMusic = context.assets.open(assetPath).bufferedReader().use { it.readText() }
+            _svgData.value = renderData(encodedMusic)
+        } catch (e: Exception) {
+            "Failed to load asset: ${e.localizedMessage}"
+            _svgData.value = ""
+        }
+        return@withContext _svgData.value
     }
 
     // Function to extract and load asset
