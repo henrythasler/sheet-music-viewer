@@ -32,10 +32,23 @@ android {
 
     signingConfigs {
         create("release") {
-            storeFile = file("../keystore.jks")
-            storePassword = System.getenv("KEYSTORE_PASSWORD")
-            keyAlias = System.getenv("KEY_ALIAS")
-            keyPassword = System.getenv("KEY_PASSWORD")
+            val keystoreFile = file("../keystore.jks")
+            val hasKeystore = keystoreFile.exists()
+            val hasEnvVars = System.getenv("KEYSTORE_PASSWORD") != null &&
+                    System.getenv("KEY_ALIAS") != null &&
+                    System.getenv("KEY_PASSWORD") != null
+
+            if (hasKeystore && hasEnvVars) {
+                storeFile = keystoreFile
+                storePassword = System.getenv("KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("KEY_ALIAS")
+                keyPassword = System.getenv("KEY_PASSWORD")
+                println("✓ Release signing configured with keystore")
+            } else {
+                println("⚠ Release signing not configured - missing keystore or environment variables")
+                println("  Keystore exists: $hasKeystore")
+                println("  Environment variables set: $hasEnvVars")
+            }
         }
     }
 
@@ -47,15 +60,31 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            signingConfig = signingConfigs.getByName("release")
+
+            // Only apply signing config if keystore exists and environment variables are set
+            val releaseSigningConfig = signingConfigs.getByName("release")
+            val keystoreFile = file("../keystore.jks")
+            val hasKeystore = keystoreFile.exists()
+            val hasEnvVars = System.getenv("KEYSTORE_PASSWORD") != null &&
+                    System.getenv("KEY_ALIAS") != null &&
+                    System.getenv("KEY_PASSWORD") != null
+
+            if (hasKeystore && hasEnvVars) {
+                signingConfig = releaseSigningConfig
+            }
+        }
+
+        debug {
+            applicationIdSuffix = ".debug"
+            isDebuggable = true
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
     kotlinOptions {
-        jvmTarget = "11"
+        jvmTarget = "17"
     }
     externalNativeBuild {
         cmake {
