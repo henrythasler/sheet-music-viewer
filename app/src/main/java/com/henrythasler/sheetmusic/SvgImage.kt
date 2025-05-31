@@ -19,6 +19,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -213,7 +214,7 @@ suspend fun imageBitmapFromSvgAtScale(
  */
 @Composable
 fun ScalableCachedSvgImage(
-    assetName: String,
+    title: String,
     svgDocument: String,
     modifier: Modifier = Modifier,
     canvasConfig: CanvasConfig = CanvasConfig(),
@@ -236,6 +237,8 @@ fun ScalableCachedSvgImage(
     // Current bitmap and render job
     var currentBitmap by remember { mutableStateOf<ImageBitmap?>(null) }
     var renderJob by remember { mutableStateOf<Job?>(null) }
+    var renderTime by remember { mutableLongStateOf(0L) }
+
 
     val fastFontResolver = remember(context) {
         FastFontResolver(context, "fonts");
@@ -249,7 +252,7 @@ fun ScalableCachedSvgImage(
         renderJob = coroutineScope.launch {
             delay(canvasConfig.debounceDelayMs)
 
-            val timeMillis = measureTimeMillis {
+            renderTime = measureTimeMillis {
                 currentBitmap = imageBitmapFromSvgAtScale(
                     svgString = svgDocument,
                     canvasSize = canvasSize,
@@ -263,7 +266,7 @@ fun ScalableCachedSvgImage(
             // reset viewport transformation as the new bitmap already includes all transformations
             scale = 1f
             offset = Offset.Zero
-            Log.d("Canvas", "imageBitmapFromSvgAtScale: ${currentBitmap?.width}x${currentBitmap?.height} took $timeMillis ms")
+            Log.d("Canvas", "imageBitmapFromSvgAtScale: ${currentBitmap?.width}x${currentBitmap?.height} took $renderTime ms")
         }
     }
 
@@ -378,7 +381,7 @@ fun ScalableCachedSvgImage(
             Text(
                 modifier = Modifier
                     .padding(6.dp),
-                text = "$assetName\nViewport: $scale, $offset\nCanvas: $renderScale, $renderOffset\nBitmap: ${currentBitmap?.width}x${currentBitmap?.height}"
+                text = "$title\nViewport: $scale, $offset\nCanvas: $renderScale, $renderOffset\nRender: $renderTime ms\nBitmap: ${currentBitmap?.width}x${currentBitmap?.height}"
             )
         }
     }
