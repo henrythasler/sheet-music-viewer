@@ -286,23 +286,23 @@ jobs:
       with:
         files: app/build/outputs/apk/release/*.apk
         tag_name: ${{ github.event.release.tag_name }}
-      body: |
-        ## Download
-        
-        📱 **For most users**: Download `verovio-demo-${{ github.event.release.tag_name }}-universal.apk`
-        
-        🔧 **Architecture-specific** (smaller file size):
-        - **ARM64 devices** (most modern phones): `verovio-demo-${{ github.event.release.tag_name }}-arm64.apk`
-        - **ARM32 devices** (older phones): `verovio-demo-${{ github.event.release.tag_name }}-arm32.apk`
-        - **x86_64 devices** (emulators/tablets): `verovio-demo-${{ github.event.release.tag_name }}-x86_64.apk`
-        
-        ## Installation
-        1. Download the APK file
-        2. Enable "Install from Unknown Sources" in Android settings
-        3. Tap the downloaded APK to install
-        
-        ## What's New
-        Initial release
+        body: |
+          ## Download
+          
+          📱 **For most users**: Download `verovio-demo-${{ github.event.release.tag_name }}-universal.apk`
+          
+          🔧 **Architecture-specific** (smaller file size):
+          - **ARM64 devices** (most modern phones): `verovio-demo-${{ github.event.release.tag_name }}-arm64.apk`
+          - **ARM32 devices** (older phones): `verovio-demo-${{ github.event.release.tag_name }}-arm32.apk`
+          - **x86_64 devices** (emulators/tablets): `verovio-demo-${{ github.event.release.tag_name }}-x86_64.apk`
+          
+          ## Installation
+          1. Download the APK file
+          2. Enable "Install from Unknown Sources" in Android settings
+          3. Tap the downloaded APK to install
+          
+          ## What's New
+          Initial release
 
     - name: Generate download instructions
       run: |
