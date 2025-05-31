@@ -5,6 +5,8 @@ on:
     branches: [ main, develop ]
   pull_request:
     branches: [ main ]
+  release:
+    types: [ published ]    
 
 jobs:
   test:
@@ -183,8 +185,7 @@ jobs:
 
   # Optional: Build signed release APK (requires secrets)
   release:
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    needs: [test, build, lint]
+    if: github.event_name == 'release'
     runs-on: ubuntu-latest
     
     steps:
@@ -251,6 +252,22 @@ jobs:
           -Pandroid.injected.signing.store.password=$KEYSTORE_PASSWORD \
           -Pandroid.injected.signing.key.alias=$KEY_ALIAS \
           -Pandroid.injected.signing.key.password=$KEY_PASSWORD
+
+        # Rename APKs with descriptive names
+        cd app/build/outputs/apk/release/
+        for apk in *.apk; do
+          if [[ $apk == *"universal"* ]]; then
+            mv "$apk" "verovio-demo-${{ github.event.release.tag_name }}-universal.apk"
+          elif [[ $apk == *"arm64-v8a"* ]]; then
+            mv "$apk" "verovio-demo-${{ github.event.release.tag_name }}-arm64.apk"
+          elif [[ $apk == *"armeabi-v7a"* ]]; then
+            mv "$apk" "verovio-demo-${{ github.event.release.tag_name }}-arm32.apk"
+          elif [[ $apk == *"x86_64"* ]]; then
+            mv "$apk" "verovio-demo-${{ github.event.release.tag_name }}-x86_64.apk"
+          else
+            mv "$apk" "verovio-demo-${{ github.event.release.tag_name }}.apk"
+          fi
+        done          
           
     - name: Build unsigned release APK (fallback)
       if: steps.check_secrets.outputs.secrets_exist == 'false'
@@ -262,6 +279,63 @@ jobs:
       with:
         name: release-apk-signed
         path: app/build/outputs/apk/release/*.apk
+
+    - name: Upload release APK to GitHub Release
+      if: steps.check_secrets.outputs.secrets_exist == 'true'
+      uses: softprops/action-gh-release@v2
+      with:
+        files: app/build/outputs/apk/release/*.apk
+        tag_name: ${{ github.event.release.tag_name }}
+      body: |
+        ## Download
+        
+        📱 **For most users**: Download `verovio-demo-${{ github.event.release.tag_name }}-universal.apk`
+        
+        🔧 **Architecture-specific** (smaller file size):
+        - **ARM64 devices** (most modern phones): `verovio-demo-${{ github.event.release.tag_name }}-arm64.apk`
+        - **ARM32 devices** (older phones): `verovio-demo-${{ github.event.release.tag_name }}-arm32.apk`
+        - **x86_64 devices** (emulators/tablets): `verovio-demo-${{ github.event.release.tag_name }}-x86_64.apk`
+        
+        ## Installation
+        1. Download the APK file
+        2. Enable "Install from Unknown Sources" in Android settings
+        3. Tap the downloaded APK to install
+        
+        ## What's New
+        Initial release
+
+    - name: Generate download instructions
+      run: |
+        cat > DOWNLOAD_INSTRUCTIONS.md << EOF
+        # verovio-demo ${{ github.event.release.tag_name }} - Download Instructions
+        
+        ## Quick Download
+        [📱 Download APK](https://github.com/${{ github.repository }}/releases/download/${{ github.event.release.tag_name }}/verovio-demo-${{ github.event.release.tag_name }}.apk)
+        
+        ## Installation Steps
+        1. **Download** the APK file using the link above
+        2. **Enable Unknown Sources**:
+          - Go to Settings > Security (or Privacy)
+          - Enable "Install apps from unknown sources" or "Unknown sources"
+          - Some devices: Settings > Apps > Special access > Install unknown apps
+        3. **Install the APK**:
+          - Open your file manager or Downloads folder
+          - Tap on the downloaded APK file
+          - Follow the installation prompts
+        
+        ## Troubleshooting
+        - **"App not installed"**: Enable Unknown Sources and try again
+        - **"Package appears to be corrupt"**: Re-download the APK
+        - **"App keeps crashing"**: Check if your device architecture is supported
+        
+        ## Device Requirements
+        - Android 7.0 (API level 24) or higher
+        - ARM64, ARM32, or x86_64 architecture
+        - Minimum 100MB free storage
+        
+        ## Verify APK Integrity
+        **SHA256**: \`$(sha256sum app/build/outputs/apk/release/verovio-demo-${{ github.event.release.tag_name }}.apk | cut -d' ' -f1)\`
+        EOF
 
     - name: Upload unsigned release APK
       if: steps.check_secrets.outputs.secrets_exist == 'false'
