@@ -13,6 +13,9 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
+      with:
+        submodules: recursive
+        token: ${{ secrets.GITHUB_TOKEN }}
       
     - name: Set up JDK 17
       uses: actions/setup-java@v4
@@ -20,14 +23,32 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
         
+    - name: Set up Android NDK
+      uses: nttld/setup-ndk@v1
+      with:
+        ndk-version: r25c
+        
+    - name: Cache NDK
+      uses: actions/cache@v3
+      with:
+        path: |
+          ${{ env.ANDROID_NDK_ROOT }}
+        key: ${{ runner.os }}-ndk-r25c
+        
+    - name: Set NDK environment variables
+      run: |
+        echo "ANDROID_NDK_HOME=$ANDROID_NDK_ROOT" >> $GITHUB_ENV
+        echo "NDK_HOME=$ANDROID_NDK_ROOT" >> $GITHUB_ENV
+        
     - name: Cache Gradle dependencies
       uses: actions/cache@v3
       with:
         path: |
           ~/.gradle/caches
           ~/.gradle/wrapper
-        key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+        key: ${{ runner.os }}-gradle-ndk-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties', '**/CMakeLists.txt', '**/*.cmake') }}
         restore-keys: |
+          ${{ runner.os }}-gradle-ndk-
           ${{ runner.os }}-gradle-
           
     - name: Grant execute permission for gradlew
@@ -51,6 +72,9 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
+      with:
+        submodules: recursive
+        token: ${{ secrets.GITHUB_TOKEN }}
       
     - name: Set up JDK 17
       uses: actions/setup-java@v4
@@ -58,14 +82,32 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
         
+    - name: Set up Android NDK
+      uses: nttld/setup-ndk@v1
+      with:
+        ndk-version: r25c
+        
+    - name: Cache NDK
+      uses: actions/cache@v3
+      with:
+        path: |
+          ${{ env.ANDROID_NDK_ROOT }}
+        key: ${{ runner.os }}-ndk-r25c
+        
+    - name: Set NDK environment variables
+      run: |
+        echo "ANDROID_NDK_HOME=$ANDROID_NDK_ROOT" >> $GITHUB_ENV
+        echo "NDK_HOME=$ANDROID_NDK_ROOT" >> $GITHUB_ENV
+        
     - name: Cache Gradle dependencies
       uses: actions/cache@v3
       with:
         path: |
           ~/.gradle/caches
           ~/.gradle/wrapper
-        key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+        key: ${{ runner.os }}-gradle-ndk-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties', '**/CMakeLists.txt', '**/*.cmake') }}
         restore-keys: |
+          ${{ runner.os }}-gradle-ndk-
           ${{ runner.os }}-gradle-
           
     - name: Grant execute permission for gradlew
@@ -75,7 +117,7 @@ jobs:
       run: ./gradlew assembleDebug
       
     - name: Upload debug APK
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: debug-apk
         path: app/build/outputs/apk/debug/*.apk
@@ -84,7 +126,7 @@ jobs:
       run: ./gradlew assembleRelease
       
     - name: Upload release APK
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: release-apk-unsigned
         path: app/build/outputs/apk/release/*.apk
@@ -95,6 +137,9 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
+      with:
+        submodules: recursive
+        token: ${{ secrets.GITHUB_TOKEN }}
       
     - name: Set up JDK 17
       uses: actions/setup-java@v4
@@ -102,14 +147,25 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
         
+    - name: Set up Android NDK
+      uses: nttld/setup-ndk@v1
+      with:
+        ndk-version: r25c
+        
+    - name: Set NDK environment variables
+      run: |
+        echo "ANDROID_NDK_HOME=$ANDROID_NDK_ROOT" >> $GITHUB_ENV
+        echo "NDK_HOME=$ANDROID_NDK_ROOT" >> $GITHUB_ENV
+        
     - name: Cache Gradle dependencies
       uses: actions/cache@v3
       with:
         path: |
           ~/.gradle/caches
           ~/.gradle/wrapper
-        key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+        key: ${{ runner.os }}-gradle-ndk-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties', '**/CMakeLists.txt', '**/*.cmake') }}
         restore-keys: |
+          ${{ runner.os }}-gradle-ndk-
           ${{ runner.os }}-gradle-
           
     - name: Grant execute permission for gradlew
@@ -119,7 +175,7 @@ jobs:
       run: ./gradlew lintDebug
       
     - name: Upload lint results
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       if: always()
       with:
         name: lint-results
@@ -134,6 +190,9 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
+      with:
+        submodules: recursive
+        token: ${{ secrets.GITHUB_TOKEN }}
       
     - name: Set up JDK 17
       uses: actions/setup-java@v4
@@ -141,14 +200,25 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
         
+    - name: Set up Android NDK
+      uses: nttld/setup-ndk@v1
+      with:
+        ndk-version: r25c
+        
+    - name: Set NDK environment variables
+      run: |
+        echo "ANDROID_NDK_HOME=$ANDROID_NDK_ROOT" >> $GITHUB_ENV
+        echo "NDK_HOME=$ANDROID_NDK_ROOT" >> $GITHUB_ENV
+        
     - name: Cache Gradle dependencies
       uses: actions/cache@v3
       with:
         path: |
           ~/.gradle/caches
           ~/.gradle/wrapper
-        key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+        key: ${{ runner.os }}-gradle-ndk-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties', '**/CMakeLists.txt', '**/*.cmake') }}
         restore-keys: |
+          ${{ runner.os }}-gradle-ndk-
           ${{ runner.os }}-gradle-
           
     - name: Grant execute permission for gradlew
@@ -177,7 +247,7 @@ jobs:
           
     - name: Upload signed release APK
       if: ${{ env.KEYSTORE_BASE64 != '' }}
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       env:
         KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
       with:
