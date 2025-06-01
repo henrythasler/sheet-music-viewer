@@ -31,24 +31,20 @@ android {
     }
 
     signingConfigs {
-        create("release") {
-            val keystoreFile = file("../keystore.jks")
-            val hasKeystore = keystoreFile.exists()
-            val hasEnvVars = System.getenv("KEYSTORE_PASSWORD") != null &&
-                    System.getenv("KEY_ALIAS") != null &&
-                    System.getenv("KEY_PASSWORD") != null
+        if (file("../keystore.jks").exists() &&
+            System.getenv("KEYSTORE_PASSWORD") != null &&
+            System.getenv("KEY_ALIAS") != null &&
+            System.getenv("KEY_PASSWORD") != null) {
 
-            if (hasKeystore && hasEnvVars) {
-                storeFile = keystoreFile
+            create("release") {
+                storeFile = file("../keystore.jks")
                 storePassword = System.getenv("KEYSTORE_PASSWORD")
                 keyAlias = System.getenv("KEY_ALIAS")
                 keyPassword = System.getenv("KEY_PASSWORD")
                 println("✓ Release signing configured with keystore")
-            } else {
-                println("⚠ Release signing not configured - missing keystore or environment variables")
-                println("  Keystore exists: $hasKeystore")
-                println("  Environment variables set: $hasEnvVars")
             }
+        } else {
+            println("⚠ Release signing not configured - missing keystore or environment variables")
         }
     }
 
@@ -61,16 +57,9 @@ android {
                 "proguard-rules.pro"
             )
 
-            // Only apply signing config if keystore exists and environment variables are set
-            val releaseSigningConfig = signingConfigs.getByName("release")
-            val keystoreFile = file("../keystore.jks")
-            val hasKeystore = keystoreFile.exists()
-            val hasEnvVars = System.getenv("KEYSTORE_PASSWORD") != null &&
-                    System.getenv("KEY_ALIAS") != null &&
-                    System.getenv("KEY_PASSWORD") != null
-
-            if (hasKeystore && hasEnvVars) {
-                signingConfig = releaseSigningConfig
+            // Only assign signingConfig if it exists
+            if (signingConfigs.findByName("release") != null) {
+                signingConfig = signingConfigs.getByName("release")
             }
         }
 
