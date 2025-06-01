@@ -204,9 +204,15 @@ jobs:
   release:
     if: github.event_name == 'release'
     needs: test
-    runs-on: ubuntu-latest
-    
+    runs-on: ubuntu-latest   
     steps:
+    - name: Get existing release info
+      run: |
+        release=$(gh api repos/${{ github.repository }}/releases/tags/${{ github.ref_name }})
+        echo "RELEASE_BODY=$(echo "$release" | jq -r .body)" >> $GITHUB_ENV
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
     - name: Checkout code
       uses: actions/checkout@v4
       with:
@@ -315,11 +321,6 @@ jobs:
       with:
         name: release-apk-signed
         path: app/build/outputs/apk/release/*.apk
-
-    - name: Get existing release info
-      run: |
-        release=$(gh api repos/${{ github.repository }}/releases/tags/${{ github.ref_name }})
-        echo "RELEASE_BODY=$(echo "$release" | jq -r .body)" >> $GITHUB_ENV
 
     - name: Upload release APK to GitHub Release
       if: steps.check_secrets.outputs.secrets_exist == 'true'
