@@ -207,9 +207,11 @@ jobs:
     runs-on: ubuntu-latest   
     steps:
     - name: Get existing release info
+      id: get_release
       run: |
         release=$(gh api repos/${{ github.repository }}/releases/tags/${{ github.ref_name }})
-        echo "RELEASE_BODY=$(echo "$release" | jq -r .body)" >> $GITHUB_ENV
+        release_body=$(echo "$release" | jq -r .body | sed ':a;N;$!ba;s/\n/\\n/g')
+        echo "release_body=$release_body" >> $GITHUB_OUTPUT
       env:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -331,7 +333,7 @@ jobs:
           download-qr.png
         tag_name: ${{ github.event.release.tag_name }}
         body: |
-          ${RELEASE_BODY}
+          ${{ steps.get_release.outputs.release_body }}
           ## Download Instructions
           [verovio-demo-${{ github.event.release.tag_name }}-universal.apk](https://github.com/${{ github.repository }}/releases/download/${{ github.event.release.tag_name }}/verovio-demo-${{ github.event.release.tag_name }}-universal.apk)
 
