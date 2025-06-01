@@ -239,7 +239,7 @@ jobs:
     - name: Decode keystore
       if: steps.check_secrets.outputs.secrets_exist == 'true'
       run: |
-        echo "current working directory: $(pwd)
+        echo "current working directory: $(pwd)"
         echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > keystore.jks
         
     - name: Build signed release APK
@@ -249,7 +249,7 @@ jobs:
         KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
         KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
       run: |
-        echo "current working directory: $(pwd)
+        echo "current working directory: $(pwd)"
         ls -la
         ./gradlew assembleRelease \
           -Pandroid.injected.signing.store.file=keystore.jks \
