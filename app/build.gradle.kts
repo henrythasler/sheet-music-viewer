@@ -11,7 +11,7 @@ android {
     defaultConfig {
         applicationId = "com.henrythasler.sheetmusic"
         minSdk = 26
-        targetSdk = 34
+        targetSdk = 35
         versionCode = 1
         versionName = "1.0"
 
@@ -23,11 +23,22 @@ android {
             }
         }
 
-        ndk {
+//        ndk {
+//            abiFilters.addAll(listOf("armeabi-v7a", "arm64-v8a", "x86_64"))
 //            abiFilters += listOf("arm64-v8a")
-            abiFilters += listOf("armeabi-v7a", "arm64-v8a", "x86_64")
+//            abiFilters += listOf("armeabi-v7a", "arm64-v8a", "x86_64")
 //            abiFilters += listOf("x86_64")
 //            abiFilters += listOf("armeabi-v7a", "arm64-v8a", "x86", "x86_64")
+//        }
+
+        // create specific APKs per target architecture (ABI)
+        splits {
+            abi {
+                isEnable = true
+                reset()
+                include("armeabi-v7a", "arm64-v8a", "x86_64")
+                isUniversalApk = true // Set to true if you want a universal APK
+            }
         }
     }
 

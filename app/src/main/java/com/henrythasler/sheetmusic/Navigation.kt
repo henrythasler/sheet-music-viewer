@@ -3,7 +3,11 @@ package com.henrythasler.sheetmusic
 import android.net.Uri
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -11,17 +15,20 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults.topAppBarColors
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.navigation.NavDirections
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
-import kotlinx.coroutines.selects.select
 
 data class NavigationItem(
     val title: String,
@@ -79,14 +86,67 @@ fun TopNavigationBar(
             }
         },
         actions = {
-            IconButton(onClick = { /* do something */ }) {
-                Icon(
-                    imageVector = Icons.Filled.Menu,
-                    contentDescription = "Localized description"
-                )
-            }
+            DropdownMenuWithDetails()
+//            IconButton(onClick = { /* do something */ }) {
+//                Icon(
+//                    imageVector = Icons.Filled.Menu,
+//                    contentDescription = "Localized description"
+//                )
+//            }
         },
     )
+}
+
+@Composable
+fun DropdownMenuWithDetails() {
+    var expanded by remember { mutableStateOf(false) }
+    val openAlertDialog = remember { mutableStateOf(false) }
+
+    IconButton(onClick = { expanded = !expanded }) {
+        Icon(Icons.Default.MoreVert, contentDescription = "More options")
+    }
+    DropdownMenu(
+        expanded = expanded,
+        onDismissRequest = { expanded = false }
+    ) {
+        DropdownMenuItem(
+            text = { Text("About") },
+            leadingIcon = { Icon(Icons.Outlined.Info, contentDescription = null) },
+            onClick = { openAlertDialog.value = true }
+        )
+    }
+
+    when {
+        // ...
+        openAlertDialog.value -> {
+            AlertDialog(
+                icon = {
+                    Icon(
+                        painter = painterResource(R.drawable.verovio_logo_big),
+                        contentDescription = "Example Icon"
+                    )
+                },
+                title = {
+                    Text(text = "Verovio Demo")
+                },
+                text = {
+                    Text(text = "by Henry Thasler\n\nsee www.verovio.org")
+                },
+                onDismissRequest = {
+                    openAlertDialog.value = false
+                },
+                confirmButton = {
+                    TextButton (
+                        onClick = {
+                            openAlertDialog.value = false
+                        }
+                    ) {
+                        Text("OK")
+                    }
+                },
+            )
+        }
+    }
 }
 
 @Composable
