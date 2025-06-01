@@ -2,6 +2,14 @@
 
 Show [MEI](https://music-encoding.org/about/)- or MusicXML-Files rendered with [Verovio](https://www.verovio.org/index.xhtml) in an Android App.
 
+This app is currently a tech-demo to show how music engraving via Verovio can be integrated into an Android app.
+
+![](docs/verovio-demo.gif)
+
+## Download and Installation
+
+see [latest release](https://github.com/henrythasler/verovio-demo-app/releases/latest)
+
 ## Build Instructions
 
 1. Install [Ninja](https://ninja-build.org/) : `sudo apt install ninja-build`
@@ -13,11 +21,11 @@ Show [MEI](https://music-encoding.org/about/)- or MusicXML-Files rendered with [
 ## Generate Font Glyphs
 
 1. Download FontForge AppImage from https://fontforge.org/en-US/downloads/gnulinux-dl/
-2. Re-generate font glyphs: `(cd app/src/main/cpp/verovio/fonts && ./generate_all.sh --fontforge /mnt/linux-data/henry/Apps/FontForge-2023-01-01-a1dad3e-x86_64_8c430574e5de7ac11b925455f22d36ed.AppImage)` (replace path to AppImage accordingly)
+2. Re-generate font glyphs: `(cd app/src/main/cpp/verovio/fonts && ./generate_all.sh --fontforge FontForge-2023-01-01.AppImage)` (replace path to AppImage accordingly)
 
 ## Known Issues
 
-- In App `build.gradle.kts`: Cmake requires additional `cppFlags += "-llog"` to avoid linker errors for Android log output.
+- In App `build.gradle.kts`: Cmake requires additional `cppFlags += "-llog"` to avoid linker errors for Android log output which in turn generates a ton of warnings during the compile step.
 
 ## Resources
 
