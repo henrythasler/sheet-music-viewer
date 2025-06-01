@@ -24,7 +24,8 @@ android {
         }
 
         ndk {
-            abiFilters += listOf("arm64-v8a")
+//            abiFilters += listOf("arm64-v8a")
+            abiFilters += listOf("armeabi-v7a", "arm64-v8a", "x86_64")
 //            abiFilters += listOf("x86_64")
 //            abiFilters += listOf("armeabi-v7a", "arm64-v8a", "x86", "x86_64")
         }
@@ -32,6 +33,7 @@ android {
 
     signingConfigs {
         // keystore is outside the project directory
+        // FIXME: check environment variables
         if (file("../../keystore.jks").exists()) {
             if(System.getenv("KEYSTORE_PASSWORD") != null &&
                 System.getenv("KEY_ALIAS") != null &&

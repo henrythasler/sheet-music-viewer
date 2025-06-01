@@ -104,6 +104,10 @@ jobs:
         echo "ANDROID_NDK_HOME=$ANDROID_NDK_ROOT" >> $GITHUB_ENV
         echo "NDK_HOME=$ANDROID_NDK_ROOT" >> $GITHUB_ENV
         
+    # Do a quick Gradle command to ensure paths exist for caching
+    - name: Setup Gradle
+      run: ./gradlew --version
+
     - name: Cache Gradle dependencies
       uses: actions/cache@v3
       with:
@@ -299,46 +303,13 @@ jobs:
         # Generate QR code for direct APK download
         qrencode -o download-qr.png "https://github.com/${{ github.repository }}/releases/download/${{ github.event.release.tag_name }}/verovio-demo-${{ github.event.release.tag_name }}.apk"        
         echo "QR code generated for download link."
-
-    - name: Generate download instructions
-      run: |
-        cat > DOWNLOAD_INSTRUCTIONS.md << EOF
-        # verovio-demo ${{ github.event.release.tag_name }} - Download Instructions
-        
-        ## Quick Download
-        [📱 Download APK](https://github.com/${{ github.repository }}/releases/download/${{ github.event.release.tag_name }}/verovio-demo-${{ github.event.release.tag_name }}.apk)
-        
-        ## Installation Steps
-        1. **Download** the APK file using the link above
-        2. **Enable Unknown Sources**:
-          - Go to Settings > Security (or Privacy)
-          - Enable "Install apps from unknown sources" or "Unknown sources"
-          - Some devices: Settings > Apps > Special access > Install unknown apps
-        3. **Install the APK**:
-          - Open your file manager or Downloads folder
-          - Tap on the downloaded APK file
-          - Follow the installation prompts
-        
-        ## Troubleshooting
-        - **"App not installed"**: Enable Unknown Sources and try again
-        - **"Package appears to be corrupt"**: Re-download the APK
-        - **"App keeps crashing"**: Check if your device architecture is supported
-        
-        ## Device Requirements
-        - Android 7.0 (API level 24) or higher
-        - ARM64, ARM32, or x86_64 architecture
-        - Minimum 100MB free storage
-        
-        ## Verify APK Integrity
-        **SHA256**: \`$(sha256sum app/build/outputs/apk/release/verovio-demo-${{ github.event.release.tag_name }}.apk | cut -d' ' -f1)\`
-        EOF
-              
-    # - name: Upload signed release APK
-    #   if: steps.check_secrets.outputs.secrets_exist == 'true'
-    #   uses: actions/upload-artifact@v4
-    #   with:
-    #     name: release-apk-signed
-    #     path: app/build/outputs/apk/release/*.apk
+             
+    - name: Upload signed release APK
+      if: steps.check_secrets.outputs.secrets_exist == 'true'
+      uses: actions/upload-artifact@v4
+      with:
+        name: release-apk-signed
+        path: app/build/outputs/apk/release/*.apk
 
     - name: Upload release APK to GitHub Release
       if: steps.check_secrets.outputs.secrets_exist == 'true'
@@ -347,25 +318,38 @@ jobs:
         files: |
           app/build/outputs/apk/release/*.apk
           download-qr.png
-          DOWNLOAD_INSTRUCTIONS.md
         tag_name: ${{ github.event.release.tag_name }}
         body: |
-          ## Download
+          # verovio-demo ${{ github.event.release.tag_name }} - Download Instructions
           
-          📱 **For most users**: Download `verovio-demo-${{ github.event.release.tag_name }}-universal.apk`
+          ## Quick Download
+          [📱 Download APK](https://github.com/${{ github.repository }}/releases/download/${{ github.event.release.tag_name }}/verovio-demo-${{ github.event.release.tag_name }}.apk)
+
+          ![download-qr.png](https://github.com/${{ github.repository }}/releases/download/${{ github.event.release.tag_name }}/download-qr.png)
           
-          🔧 **Architecture-specific** (smaller file size):
-          - **ARM64 devices** (most modern phones): `verovio-demo-${{ github.event.release.tag_name }}-arm64.apk`
-          - **ARM32 devices** (older phones): `verovio-demo-${{ github.event.release.tag_name }}-arm32.apk`
-          - **x86_64 devices** (emulators/tablets): `verovio-demo-${{ github.event.release.tag_name }}-x86_64.apk`
+          ## Installation Steps
+          1. **Download** the APK file using the link above
+          2. **Enable Unknown Sources**:
+            - Go to Settings > Security (or Privacy)
+            - Enable "Install apps from unknown sources" or "Unknown sources"
+            - Some devices: Settings > Apps > Special access > Install unknown apps
+          3. **Install the APK**:
+            - Open your file manager or Downloads folder
+            - Tap on the downloaded APK file
+            - Follow the installation prompts
           
-          ## Installation
-          1. Download the APK file
-          2. Enable "Install from Unknown Sources" in Android settings
-          3. Tap the downloaded APK to install
+          ## Troubleshooting
+          - **"App not installed"**: Enable Unknown Sources and try again
+          - **"Package appears to be corrupt"**: Re-download the APK
+          - **"App keeps crashing"**: Check if your device architecture is supported
           
-          ## What's New
-          Initial release
+          ## Device Requirements
+          - Android 8.0 (API level 26) or higher
+          - ARM64, ARM32, or x86_64 architecture
+          - Minimum 100MB free storage
+          
+          ## Verify APK Integrity
+          **SHA256**: \`$(sha256sum app/build/outputs/apk/release/verovio-demo-${{ github.event.release.tag_name }}.apk | cut -d' ' -f1)\`
 
     - name: Upload unsigned release APK
       if: steps.check_secrets.outputs.secrets_exist == 'false'
@@ -376,4 +360,4 @@ jobs:
         
     - name: Clean up keystore
       if: always()
-      run: rm -f keystore.jks
+      run: rm -f keystore.jks && rm -f app/keystore.jks
