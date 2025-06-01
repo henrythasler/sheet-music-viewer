@@ -83,6 +83,10 @@ jobs:
       with:
         ndk-version: r25c
         
+    # Do a quick Gradle command to ensure paths exist for caching
+    - name: Setup Gradle
+      run: ./gradlew --version
+            
     - name: Cache NDK
       uses: actions/cache@v3
       with:
@@ -95,10 +99,6 @@ jobs:
         echo "ANDROID_NDK_HOME=$ANDROID_NDK_ROOT" >> $GITHUB_ENV
         echo "NDK_HOME=$ANDROID_NDK_ROOT" >> $GITHUB_ENV
       
-    # Do a quick Gradle command to ensure paths exist for caching
-    - name: Setup Gradle
-      run: ./gradlew --version
-            
     - name: Cache Gradle dependencies
       uses: actions/cache@v3
       with:
@@ -306,7 +306,7 @@ jobs:
         sudo apt-get update && sudo apt-get install -y qrencode
         
         # Generate QR code for direct APK download
-        qrencode -o download-qr.png "https://github.com/${{ github.repository }}/releases/download/${{ github.event.release.tag_name }}/verovio-demo-${{ github.event.release.tag_name }}.apk"        
+        qrencode -o download-qr.png "https://github.com/${{ github.repository }}/releases/download/${{ github.event.release.tag_name }}/verovio-demo-${{ github.event.release.tag_name }}-universal.apk"        
         echo "QR code generated for download link."
              
     - name: Upload signed release APK
@@ -315,6 +315,11 @@ jobs:
       with:
         name: release-apk-signed
         path: app/build/outputs/apk/release/*.apk
+
+    - name: Get existing release info
+      run: |
+        release=$(gh api repos/${{ github.repository }}/releases/tags/${{ github.ref_name }})
+        echo "RELEASE_BODY=$(echo "$release" | jq -r .body)" >> $GITHUB_ENV
 
     - name: Upload release APK to GitHub Release
       if: steps.check_secrets.outputs.secrets_exist == 'true'
@@ -325,13 +330,17 @@ jobs:
           download-qr.png
         tag_name: ${{ github.event.release.tag_name }}
         body: |
-          # verovio-demo ${{ github.event.release.tag_name }} - Download Instructions
-          
-          ## Quick Download
-          [verovio-demo-${{ github.event.release.tag_name }}.apk](https://github.com/${{ github.repository }}/releases/download/${{ github.event.release.tag_name }}/verovio-demo-${{ github.event.release.tag_name }}.apk)
+          ${RELEASE_BODY}
+          ## Download Instructions
+          [verovio-demo-${{ github.event.release.tag_name }}-universal.apk](https://github.com/${{ github.repository }}/releases/download/${{ github.event.release.tag_name }}/verovio-demo-${{ github.event.release.tag_name }}-universal.apk)
 
           Download Link as QR Code:
           ![download-qr.png](https://github.com/${{ github.repository }}/releases/download/${{ github.event.release.tag_name }}/download-qr.png)
+
+          Architecture-specific (smaller file size):
+          - **ARM64 devices** (most modern phones): [verovio-demo-${{ github.event.release.tag_name }}-arm64.apk](https://github.com/${{ github.repository }}/releases/download/${{ github.event.release.tag_name }}/verovio-demo-${{ github.event.release.tag_name }}-arm64.apk)
+          - **ARM32 devices** (older phones): [verovio-demo-${{ github.event.release.tag_name }}-arm32.apk](https://github.com/${{ github.repository }}/releases/download/${{ github.event.release.tag_name }}/verovio-demo-${{ github.event.release.tag_name }}-arm32.apk)
+          - **x86_64 devices** (emulators/tablets): [verovio-demo-${{ github.event.release.tag_name }}-x86_64.apk](https://github.com/${{ github.repository }}/releases/download/${{ github.event.release.tag_name }}/verovio-demo-${{ github.event.release.tag_name }}-x86_64.apk)
           
           ## Installation Steps
           1. **Download** the APK file using the link above. Use the QR code for convenience.
@@ -355,9 +364,6 @@ jobs:
           - Android 8.0 (API level 26) or higher
           - ARM64, ARM32, or x86_64 architecture
           - Minimum 100MB free storage
-          
-          ## Verify APK Integrity
-          **SHA256**: \`$(sha256sum app/build/outputs/apk/release/verovio-demo-${{ github.event.release.tag_name }}.apk | cut -d' ' -f1)\`
 
     - name: Upload unsigned release APK
       if: steps.check_secrets.outputs.secrets_exist == 'false'
