@@ -31,20 +31,23 @@ android {
     }
 
     signingConfigs {
-        if (file("../keystore.jks").exists() &&
-            System.getenv("KEYSTORE_PASSWORD") != null &&
-            System.getenv("KEY_ALIAS") != null &&
-            System.getenv("KEY_PASSWORD") != null) {
-
-            create("release") {
-                storeFile = file("../keystore.jks")
-                storePassword = System.getenv("KEYSTORE_PASSWORD")
-                keyAlias = System.getenv("KEY_ALIAS")
-                keyPassword = System.getenv("KEY_PASSWORD")
-                println("✓ Release signing configured with keystore")
+        // keystore is outside the project directory
+        if (file("../../keystore.jks").exists()) {
+            if(System.getenv("KEYSTORE_PASSWORD") != null &&
+                System.getenv("KEY_ALIAS") != null &&
+                System.getenv("KEY_PASSWORD") != null) {
+                create("release") {
+                    storeFile = file("../keystore.jks")
+                    storePassword = System.getenv("KEYSTORE_PASSWORD")
+                    keyAlias = System.getenv("KEY_ALIAS")
+                    keyPassword = System.getenv("KEY_PASSWORD")
+                    println("✓ Release signing configured with keystore")
+                }
+            } else {
+                println("⚠ Release signing not configured - missing environment variables")
             }
         } else {
-            println("⚠ Release signing not configured - missing keystore or environment variables")
+            println("⚠ Release signing not configured - missing keystore")
         }
     }
 
