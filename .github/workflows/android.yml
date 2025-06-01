@@ -117,6 +117,11 @@ jobs:
           
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
+
+    - name: Copy Verovio data assets
+      run: |
+        cp -r app/src/main/cpp/verovio/data/ app/src/main/assets/
+        echo "Verovio data copied to assets."
       
     - name: Build debug APK
       run: ./gradlew assembleDebug
@@ -245,7 +250,12 @@ jobs:
         echo "current working directory: $(pwd)"
         echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > app/keystore.jks
         echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > keystore.jks
-        
+
+    - name: Copy Verovio data assets
+      run: |
+        cp -r app/src/main/cpp/verovio/data/ app/src/main/assets/
+        echo "Verovio data copied to assets."
+
     - name: Build signed release APK
       if: steps.check_secrets.outputs.secrets_exist == 'true'
       env:
@@ -275,42 +285,20 @@ jobs:
           else
             mv "$apk" "verovio-demo-${{ github.event.release.tag_name }}.apk"
           fi
-        done          
-          
+        done    
+    
     - name: Build unsigned release APK (fallback)
       if: steps.check_secrets.outputs.secrets_exist == 'false'
       run: ./gradlew assembleRelease
-          
-    - name: Upload signed release APK
-      if: steps.check_secrets.outputs.secrets_exist == 'true'
-      uses: actions/upload-artifact@v4
-      with:
-        name: release-apk-signed
-        path: app/build/outputs/apk/release/*.apk
 
-    - name: Upload release APK to GitHub Release
-      if: steps.check_secrets.outputs.secrets_exist == 'true'
-      uses: softprops/action-gh-release@v2
-      with:
-        files: app/build/outputs/apk/release/*.apk
-        tag_name: ${{ github.event.release.tag_name }}
-        body: |
-          ## Download
-          
-          📱 **For most users**: Download `verovio-demo-${{ github.event.release.tag_name }}-universal.apk`
-          
-          🔧 **Architecture-specific** (smaller file size):
-          - **ARM64 devices** (most modern phones): `verovio-demo-${{ github.event.release.tag_name }}-arm64.apk`
-          - **ARM32 devices** (older phones): `verovio-demo-${{ github.event.release.tag_name }}-arm32.apk`
-          - **x86_64 devices** (emulators/tablets): `verovio-demo-${{ github.event.release.tag_name }}-x86_64.apk`
-          
-          ## Installation
-          1. Download the APK file
-          2. Enable "Install from Unknown Sources" in Android settings
-          3. Tap the downloaded APK to install
-          
-          ## What's New
-          Initial release
+    - name: Generate QR Code for APK download
+      run: |
+        # Install qrencode (for generating QR codes)
+        sudo apt-get update && sudo apt-get install -y qrencode
+        
+        # Generate QR code for direct APK download
+        qrencode -o download-qr.png "https://github.com/${{ github.repository }}/releases/download/${{ github.event.release.tag_name }}/verovio-demo-${{ github.event.release.tag_name }}.apk"        
+        echo "QR code generated for download link."
 
     - name: Generate download instructions
       run: |
@@ -344,6 +332,40 @@ jobs:
         ## Verify APK Integrity
         **SHA256**: \`$(sha256sum app/build/outputs/apk/release/verovio-demo-${{ github.event.release.tag_name }}.apk | cut -d' ' -f1)\`
         EOF
+              
+    # - name: Upload signed release APK
+    #   if: steps.check_secrets.outputs.secrets_exist == 'true'
+    #   uses: actions/upload-artifact@v4
+    #   with:
+    #     name: release-apk-signed
+    #     path: app/build/outputs/apk/release/*.apk
+
+    - name: Upload release APK to GitHub Release
+      if: steps.check_secrets.outputs.secrets_exist == 'true'
+      uses: softprops/action-gh-release@v2
+      with:
+        files: |
+          app/build/outputs/apk/release/*.apk
+          download-qr.png
+          DOWNLOAD_INSTRUCTIONS.md
+        tag_name: ${{ github.event.release.tag_name }}
+        body: |
+          ## Download
+          
+          📱 **For most users**: Download `verovio-demo-${{ github.event.release.tag_name }}-universal.apk`
+          
+          🔧 **Architecture-specific** (smaller file size):
+          - **ARM64 devices** (most modern phones): `verovio-demo-${{ github.event.release.tag_name }}-arm64.apk`
+          - **ARM32 devices** (older phones): `verovio-demo-${{ github.event.release.tag_name }}-arm32.apk`
+          - **x86_64 devices** (emulators/tablets): `verovio-demo-${{ github.event.release.tag_name }}-x86_64.apk`
+          
+          ## Installation
+          1. Download the APK file
+          2. Enable "Install from Unknown Sources" in Android settings
+          3. Tap the downloaded APK to install
+          
+          ## What's New
+          Initial release
 
     - name: Upload unsigned release APK
       if: steps.check_secrets.outputs.secrets_exist == 'false'
