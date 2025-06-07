@@ -41,6 +41,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toSize
 import androidx.core.graphics.createBitmap
+import androidx.core.graphics.scale
 import com.caverock.androidsvg.RenderOptions
 import com.caverock.androidsvg.SVG
 import com.caverock.androidsvg.SVGExternalFileResolver
@@ -131,55 +132,34 @@ suspend fun imageBitmapFromSvgAtScale(
     }
 
     svg?.let {
+
+        // add some extra space around the SVG to allow for panning
+        // Ensure canvas size is at least as large as the SVG size, with some extra space for panning
+        val canvasExtension = 800f
+
+        // get SVG size from the document, or use the canvas size if not specified
         val svgSize = Size(
             if (it.documentWidth != -1f) it.documentWidth else canvasSize.width,
             if (it.documentHeight != -1f) it.documentHeight else canvasSize.height
         )
         Log.d("SVG", "imageBitmapFromSvgAtScale(): svgSize: $svgSize")
 
-        val picture = Picture()
-        val canvas = picture.beginRecording(canvasSize.width.toInt(), canvasSize.height.toInt())
-
-        val scaleX = canvasSize.width / svgSize.width
-        val scaleY = canvasSize.height / svgSize.height
-        val initialScale =
-            minOf(scaleX, scaleY) * 1.0f // add some margin if required
-
-        val centeringX = (canvasSize.width - svgSize.width * initialScale) / 2f
-        val centeringY = (canvasSize.height - svgSize.height * initialScale) / 2f
-
-
-        Log.d("SVG", "imageBitmapFromSvgAtScale(): $scale, $offset, Center=$centeringX, $centeringY, initialScale=$initialScale")
-        canvas.translate(offset.x, offset.y)
-        canvas.scale(scale, scale, canvasSize.width / 2f, canvasSize.height / 2f)
-
-        // SVG background
-        val paint = Paint()
-        paint.color = 0xffffff
-        paint.alpha = 200
-        canvas.drawRect(
-            centeringX,
-            centeringY,
-            centeringX + svgSize.width * initialScale,
-            centeringY + svgSize.height * initialScale,
-            paint
-        )
-
-        // Set up render options
+        // Set up AndroidSVG render options
         val renderOptions = RenderOptions()
+
+        // to collect custom CSS styles that will be applied to the SVG
         val customCss = mutableListOf<String>()
 
         // Apply tint if specified
         svgConfig.tintColor?.let { tintColor ->
-            val color = String.format(
-                "#%02X%02X%02X%02X",
+            val color = "#%02X%02X%02X%02X".format(
                 (tintColor.red * 255).toInt(),
                 (tintColor.green * 255).toInt(),
                 (tintColor.blue * 255).toInt(),
                 (tintColor.alpha * 255).toInt()
             )
-            customCss.add("svg { fill: $color;}")
-            customCss.add("path { color: $color;}")
+            customCss.add("svg { fill: $color; }")
+            customCss.add("path { color: $color; }")
         }
 
         // use custom font for all text items
@@ -187,22 +167,64 @@ suspend fun imageBitmapFromSvgAtScale(
             customCss.add("text { font-family: $font;}")
         }
 
-        // apply all custom css settings in one operation
+        // merge and apply custom CSS styles
         if (customCss.size > 0) {
             renderOptions.css(customCss.joinToString(" "))
         }
 
-        // Set SVG viewport to the target resolution
-        it.setDocumentWidth(canvasSize.width)
-        it.setDocumentHeight(canvasSize.height)
+        // create a Picture to draw the SVG into
+        // this allows us to render the SVG at a specific scale and offset
+        // and then convert it to a Bitmap
+        // this is required because AndroidSVG does not support scaling and offsetting directly
+        val picture = Picture()
+        val canvas = picture.beginRecording((canvasSize.width + 2 * canvasExtension).toInt(), (canvasSize.height + 2 * canvasExtension).toInt())
+
+        // Calculate initial scale to fit and center the SVG into the canvas
+        val scaleX = canvasSize.width / svgSize.width
+        val scaleY = canvasSize.height / svgSize.height
+
+        // maintains aspect ratio while scaling to fit the canvas
+        val initialScale =
+            minOf(scaleX, scaleY) * 1.0f // add some margin if required
+
+        val centeringX = (canvas.width - svgSize.width) / 2f
+        val centeringY = (canvas.height - svgSize.height) / 2f
+
+        Log.d(
+            "SVG",
+            "imageBitmapFromSvgAtScale(): $scale, $offset, Center=$centeringX, $centeringY, initialScale=$initialScale"
+        )
+
+        val background = Paint()
+        background.color = 0x00ff00
+        background.alpha = 0x80
+        canvas.drawRect(0f, 0f, canvas.width.toFloat(), canvas.height.toFloat(), background)
+
+        
+        // Apply the offset and scale to the canvas
+        // This allows us to pan and zoom the SVG
+        canvas.translate(offset.x, offset.y)
+        canvas.scale(scale, scale, canvas.width / 2f, canvas.height / 2f)
+
+        // Center and fit the SVG in the canvas        
+        canvas.translate(centeringX, centeringY)
+        canvas.scale(initialScale, initialScale, it.documentWidth / 2f, it.documentHeight / 2f)
+
+        // SVG background
+        val paint = Paint()
+        paint.color = 0xffffff
+        paint.alpha = 200
+        canvas.drawRect(0f, 0f, svgSize.width, svgSize.height, paint)
+
+        // Render the SVG to the canvas using the render options
         it.renderToCanvas(canvas, renderOptions)
 
         picture.endRecording()
 
         // Convert Picture to Bitmap
         val bitmap = createBitmap(
-            canvasSize.width.toInt(),
-            canvasSize.height.toInt(),
+            canvas.width,
+            canvas.height,
             Bitmap.Config.ARGB_8888
         )
         val bitmapCanvas = android.graphics.Canvas(bitmap)
@@ -274,7 +296,10 @@ fun ScalableCachedSvgImage(
             // reset viewport transformation as the new bitmap already includes all transformations
             scale = 1f
             offset = Offset.Zero
-            Log.d("Canvas", "imageBitmapFromSvgAtScale: ${currentBitmap?.width}x${currentBitmap?.height} took $renderTime ms")
+            Log.d(
+                "Canvas",
+                "imageBitmapFromSvgAtScale: ${currentBitmap?.width}x${currentBitmap?.height} took $renderTime ms"
+            )
         }
     }
 
@@ -377,7 +402,10 @@ fun ScalableCachedSvgImage(
                         currentBitmap?.let { bitmap ->
                             val centeringX = (canvasSize.width - bitmap.width) / 2f
                             val centeringY = (canvasSize.height - bitmap.height) / 2f
-                            Log.d("Canvas", "canvas: $canvasSize, bitmap: ${bitmap.width}x${bitmap.height}, center: ($centeringX, $centeringY)")
+                            Log.d(
+                                "Canvas",
+                                "canvas: $canvasSize, bitmap: ${bitmap.width}x${bitmap.height}, center: ($centeringX, $centeringY)"
+                            )
 
                             withTransform({
                                 translate(centeringX, centeringY)
