@@ -6,6 +6,7 @@ import android.graphics.Paint
 import android.graphics.Picture
 import android.graphics.Typeface
 import android.util.Log
+import androidx.collection.LruCache
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -44,6 +45,7 @@ import androidx.core.graphics.createBitmap
 import com.caverock.androidsvg.RenderOptions
 import com.caverock.androidsvg.SVG
 import com.caverock.androidsvg.SVGExternalFileResolver
+import com.caverock.androidsvg.SVGParseException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -83,7 +85,7 @@ class FastFontResolver(context: Context, assetFolder: String = "") : SVGExternal
 
     override fun resolveFont(fontFamily: String, fontWeight: Int, fontStyle: String): Typeface? {
         if (this.fontCache.containsKey(fontFamily)) {
-            Log.d("FastFontResolver", "cache hit for $fontFamily ($fontWeight, $fontStyle)")
+//            Log.d("FastFontResolver", "cache hit for $fontFamily ($fontWeight, $fontStyle)")
             return this.fontCache[fontFamily]
         }
 
@@ -107,49 +109,23 @@ class FastFontResolver(context: Context, assetFolder: String = "") : SVGExternal
     }
 }
 
+class SVGCache {
+    companion object {
+        private val svgCache = LruCache<Int, SVG>(50)
 
-object SvgCache {
-    private val cache = ConcurrentHashMap<String, SVG>()
-
-    fun getCacheKey(
-        svgString: String,
-    ): String {
-        return "${svgString.hashCode().absoluteValue}-${svgString.length}"
-    }
-
-    fun has(key: String): Boolean {
-        return cache.containsKey(key)
-    }
-
-    fun get(key: String): SVG? = cache[key]
-
-    fun put(key: String, svg: SVG) {
-        cache[key] = svg
-    }
-
-    fun clear() {
-        cache.clear()
-    }
-
-    fun getSize(): Int = cache.size
-}
-
-fun getSvgObject(svgString: String): SVG? {
-    val cacheKey = SvgCache.getCacheKey(svgString)
-    val svg: SVG? = SvgCache.get(cacheKey)
-    if (svg != null) {
-        Log.d("SVG", "using cached SVG for key '$cacheKey'")
-        return svg
-    }
-    else {
-        try {
-            Log.i("SVG", "parsing SVG-data (${svgString.length / 1024} KiB)")
-            val newSvg = SVG.getFromString(svgString)
-            SvgCache.put(cacheKey, newSvg)
-            return newSvg
-        } catch (e: Exception) {
-            e.printStackTrace()
-            return null
+        fun getCachedSVG(svgString: String): SVG? {
+            val key = svgString.hashCode()
+            return svgCache[key] ?: run {
+                try {
+                    Log.i("SVG", "parsing SVG-data (${svgString.length / 1024} KiB)")
+                    val svg = SVG.getFromString(svgString)
+                    svgCache.put(key, svg)
+                    svg
+                } catch (e: SVGParseException) {
+                    Log.e("SVG", "Failed to parse SVG", e)
+                    null
+                }
+            }
         }
     }
 }
@@ -167,7 +143,7 @@ suspend fun imageBitmapFromSvgAtScale(
 ): ImageBitmap? = withContext(Dispatchers.IO) {
 
     // Load and render the SVG
-    getSvgObject(svgString)?.let { svg ->
+    SVGCache.getCachedSVG(svgString)?.let { svg ->
         // add some extra space around the SVG to allow for panning
         // Ensure canvas size is at least as large as the SVG size, with some extra space for panning
         val canvasExtension = 800f
@@ -200,7 +176,7 @@ suspend fun imageBitmapFromSvgAtScale(
         // use custom font for all text items
         SVG.registerExternalFileResolver(fontResolver);
         svgConfig.customFont?.let { font ->
-            customCss.add("text { font-family: $font;}")
+            customCss.add("text { font-family: $font; }")
         }
 
         // merge and apply custom CSS styles
