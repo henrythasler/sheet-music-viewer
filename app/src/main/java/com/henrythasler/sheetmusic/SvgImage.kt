@@ -1,6 +1,7 @@
 package com.henrythasler.sheetmusic
 
 import android.content.Context
+import android.graphics.Bitmap
 import android.graphics.Paint
 import android.graphics.Picture
 import android.graphics.Typeface
@@ -31,6 +32,8 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.drawscope.scale
+import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
@@ -48,6 +51,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.nio.file.Paths
+import kotlin.math.sqrt
 import kotlin.system.measureTimeMillis
 
 /**
@@ -196,7 +200,11 @@ suspend fun imageBitmapFromSvgAtScale(
         picture.endRecording()
 
         // Convert Picture to Bitmap
-        val bitmap = createBitmap(canvasSize.width.toInt(), canvasSize.height.toInt())
+        val bitmap = createBitmap(
+            canvasSize.width.toInt(),
+            canvasSize.height.toInt(),
+            Bitmap.Config.ARGB_8888
+        )
         val bitmapCanvas = android.graphics.Canvas(bitmap)
         bitmapCanvas.drawPicture(picture)
 
@@ -351,7 +359,7 @@ fun ScalableCachedSvgImage(
             modifier = Modifier
                 .fillMaxSize()
                 .graphicsLayer {
-                    // Apply current scale and offset
+                    // Apply scale and offset for panning and zooming (low-latency operation)
                     scaleX = scale
                     scaleY = scale
                     translationX = offset.x
@@ -365,9 +373,17 @@ fun ScalableCachedSvgImage(
                     onDrawWithContent {
                         // Viewport background
                         drawRect(Color.Yellow, Offset.Zero, viewportSize)
+
                         currentBitmap?.let { bitmap ->
-                            drawImage(image = bitmap)
-//                            Log.d("Canvas", "bitmap: ${bitmap.width}x${bitmap.height}")
+                            val centeringX = (canvasSize.width - bitmap.width) / 2f
+                            val centeringY = (canvasSize.height - bitmap.height) / 2f
+                            Log.d("Canvas", "canvas: $canvasSize, bitmap: ${bitmap.width}x${bitmap.height}, center: ($centeringX, $centeringY)")
+
+                            withTransform({
+                                translate(centeringX, centeringY)
+                            }) {
+                                drawImage(image = bitmap)
+                            }
                         }
                     }
                 }

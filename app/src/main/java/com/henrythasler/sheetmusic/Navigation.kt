@@ -1,6 +1,11 @@
 package com.henrythasler.sheetmusic
 
+import android.content.Intent
 import android.net.Uri
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.MoreVert
@@ -23,12 +28,20 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.core.net.toUri
 
 data class NavigationItem(
     val title: String,
@@ -130,13 +143,42 @@ fun DropdownMenuWithDetails() {
                     Text(text = "Verovio Demo")
                 },
                 text = {
-                    Text(text = "by Henry Thasler\n\nsee www.verovio.org")
+                    Column {
+                        Text("by Henry Thasler")
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        val verovioLink = buildAnnotatedString {
+                            append("See ")
+                            pushStringAnnotation(tag = "URL", annotation = "https://www.verovio.org")
+                            withStyle(style = SpanStyle(textDecoration = TextDecoration.Underline, color = MaterialTheme.colorScheme.primary)) {
+                                append("www.verovio.org")
+                            }
+                            pop()
+                        }
+                        val context = LocalContext.current
+                        Text(
+                            text = verovioLink,
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier
+                                .clickable {
+                                    val annotation = verovioLink.getStringAnnotations("URL", 0, verovioLink.length)
+                                        .firstOrNull()
+                                    annotation?.let {
+                                        val intent = Intent(
+                                            Intent.ACTION_VIEW,
+                                            it.item.toUri()
+                                        )
+                                        context.startActivity(intent)
+                                    }
+                                }
+                        )
+                    }
                 },
                 onDismissRequest = {
                     openAlertDialog.value = false
                 },
                 confirmButton = {
-                    TextButton (
+                    TextButton(
                         onClick = {
                             openAlertDialog.value = false
                         }
