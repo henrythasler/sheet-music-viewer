@@ -34,6 +34,7 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
@@ -230,10 +231,11 @@ suspend fun imageBitmapFromSvgAtScale(
             "imageBitmapFromSvgAtScale(): $scale, $offset, Center=$centeringX, $centeringY, initialScale=$initialScale"
         )
 
+        // Bitmap background for debugging
         val background = Paint()
         background.color = 0x00ff00
         background.alpha = 0x80
-        canvas.drawRect(0f, 0f, canvas.width.toFloat(), canvas.height.toFloat(), background)
+//        canvas.drawRect(0f, 0f, canvas.width.toFloat(), canvas.height.toFloat(), background)
 
         
         // Apply the offset and scale to the canvas
@@ -247,8 +249,7 @@ suspend fun imageBitmapFromSvgAtScale(
 
         // SVG background
         val paint = Paint()
-        paint.color = 0xffffff
-        paint.alpha = 200
+        paint.color = Color.White.toArgb()
         canvas.drawRect(0f, 0f, svgSize.width, svgSize.height, paint)
 
         // Render the SVG to the canvas using the render options
@@ -348,7 +349,7 @@ fun ScalableCachedSvgImage(
     Box(
         modifier = modifier
             .clipToBounds()
-            .background(Color.Magenta)
+            .background(Color.Magenta.copy(alpha = 0.1f))
             .pointerInput(Unit) {
                 detectTapGestures(
                     onDoubleTap = {
@@ -432,7 +433,7 @@ fun ScalableCachedSvgImage(
                 .drawWithCache {
                     onDrawWithContent {
                         // Viewport background
-                        drawRect(Color.Yellow, Offset.Zero, viewportSize)
+                        drawRect(Color.Yellow.copy(alpha = 0.3f), Offset.Zero, viewportSize)
 
                         currentBitmap?.let { bitmap ->
                             val centeringX = (canvasSize.width - bitmap.width) / 2f
@@ -455,7 +456,7 @@ fun ScalableCachedSvgImage(
         Column(
             modifier = Modifier
 //                .paddingFromBaseline(top = 200.dp)
-                .background(Color.hsv(0f, 0f, 1f, 0.5f)),
+                .background(Color.White.copy(alpha = 0.5f)),
         ) {
             Text(
                 modifier = Modifier
