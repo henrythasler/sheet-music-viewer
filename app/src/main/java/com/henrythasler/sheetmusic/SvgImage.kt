@@ -32,7 +32,6 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
@@ -41,7 +40,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toSize
 import androidx.core.graphics.createBitmap
-import androidx.core.graphics.scale
 import com.caverock.androidsvg.RenderOptions
 import com.caverock.androidsvg.SVG
 import com.caverock.androidsvg.SVGExternalFileResolver
@@ -52,7 +50,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.nio.file.Paths
-import kotlin.math.sqrt
+import java.util.concurrent.ConcurrentHashMap
+import kotlin.math.absoluteValue
 import kotlin.system.measureTimeMillis
 
 /**
@@ -108,6 +107,52 @@ class FastFontResolver(context: Context, assetFolder: String = "") : SVGExternal
 }
 
 
+object SvgCache {
+    private val cache = ConcurrentHashMap<String, SVG>()
+
+    fun getCacheKey(
+        svgString: String,
+    ): String {
+        return "${svgString.hashCode().absoluteValue}-${svgString.length}"
+    }
+
+    fun has(key: String): Boolean {
+        return cache.containsKey(key)
+    }
+
+    fun get(key: String): SVG? = cache[key]
+
+    fun put(key: String, svg: SVG) {
+        cache[key] = svg
+    }
+
+    fun clear() {
+        cache.clear()
+    }
+
+    fun getSize(): Int = cache.size
+}
+
+fun getSvgObject(svgString: String): SVG? {
+    val cacheKey = SvgCache.getCacheKey(svgString)
+    val svg: SVG? = SvgCache.get(cacheKey)
+    if (svg != null) {
+        Log.d("SVG", "using cached SVG for key '$cacheKey'")
+        return svg
+    }
+    else {
+        try {
+            Log.i("SVG", "parsing SVG-data (${svgString.length / 1024} KiB)")
+            val newSvg = SVG.getFromString(svgString)
+            SvgCache.put(cacheKey, newSvg)
+            return newSvg
+        } catch (e: Exception) {
+            e.printStackTrace()
+            return null
+        }
+    }
+}
+
 /**
  * Loads an SVG and renders it at a specific scale factor
  */
@@ -121,26 +166,15 @@ suspend fun imageBitmapFromSvgAtScale(
 ): ImageBitmap? = withContext(Dispatchers.IO) {
 
     // Load and render the SVG
-    // FIXME: cache svg object
-    val svg = try {
-        Log.i("SVG", "rendering SVG-data (${svgString.length / 1024} KiB)")
-        SVG.registerExternalFileResolver(fontResolver);
-        SVG.getFromString(svgString)
-    } catch (e: Exception) {
-        e.printStackTrace()
-        null
-    }
-
-    svg?.let {
-
+    getSvgObject(svgString)?.let { svg ->
         // add some extra space around the SVG to allow for panning
         // Ensure canvas size is at least as large as the SVG size, with some extra space for panning
         val canvasExtension = 800f
 
         // get SVG size from the document, or use the canvas size if not specified
         val svgSize = Size(
-            if (it.documentWidth != -1f) it.documentWidth else canvasSize.width,
-            if (it.documentHeight != -1f) it.documentHeight else canvasSize.height
+            if (svg.documentWidth != -1f) svg.documentWidth else canvasSize.width,
+            if (svg.documentHeight != -1f) svg.documentHeight else canvasSize.height
         )
         Log.d("SVG", "imageBitmapFromSvgAtScale(): svgSize: $svgSize")
 
@@ -163,6 +197,7 @@ suspend fun imageBitmapFromSvgAtScale(
         }
 
         // use custom font for all text items
+        SVG.registerExternalFileResolver(fontResolver);
         svgConfig.customFont?.let { font ->
             customCss.add("text { font-family: $font;}")
         }
@@ -208,7 +243,7 @@ suspend fun imageBitmapFromSvgAtScale(
 
         // Center and fit the SVG in the canvas        
         canvas.translate(centeringX, centeringY)
-        canvas.scale(initialScale, initialScale, it.documentWidth / 2f, it.documentHeight / 2f)
+        canvas.scale(initialScale, initialScale, svg.documentWidth / 2f, svg.documentHeight / 2f)
 
         // SVG background
         val paint = Paint()
@@ -217,7 +252,7 @@ suspend fun imageBitmapFromSvgAtScale(
         canvas.drawRect(0f, 0f, svgSize.width, svgSize.height, paint)
 
         // Render the SVG to the canvas using the render options
-        it.renderToCanvas(canvas, renderOptions)
+        svg.renderToCanvas(canvas, renderOptions)
 
         picture.endRecording()
 
