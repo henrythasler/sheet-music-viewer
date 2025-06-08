@@ -49,12 +49,11 @@ import com.caverock.androidsvg.SVGParseException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.nio.file.Paths
-import java.util.concurrent.ConcurrentHashMap
-import kotlin.math.absoluteValue
 import kotlin.system.measureTimeMillis
 
 /**
@@ -111,7 +110,7 @@ class FastFontResolver(context: Context, assetFolder: String = "") : SVGExternal
 
 class SVGCache {
     companion object {
-        private val svgCache = LruCache<Int, SVG>(50)
+        private val svgCache = LruCache<Int, SVG>(4)
 
         fun getCachedSVG(svgString: String): SVG? {
             val key = svgString.hashCode()
@@ -288,7 +287,7 @@ fun ScalableCachedSvgImage(
 
     // Re-render with debouncing
     LaunchedEffect(renderOffset, renderScale) {
-        renderJob?.cancel()
+        renderJob?.cancelAndJoin()
 
         // Start new render job with debounce
         renderJob = coroutineScope.launch {
