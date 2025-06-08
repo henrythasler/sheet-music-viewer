@@ -4,7 +4,9 @@ Show [MEI](https://music-encoding.org/about/)- or MusicXML-Files rendered with [
 
 This app is currently a tech-demo to show how music engraving via Verovio can be integrated into an Android app.
 
-![](docs/verovio-demo.gif)
+1|2|3
+---|---|---
+![](docs/demo1.png)|![](docs/demo2.png)|![](docs/demo3.png)
 
 ## Download and Installation
 
