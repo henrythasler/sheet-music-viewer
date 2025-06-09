@@ -137,6 +137,7 @@ suspend fun imageBitmapFromSvgAtScale(
     canvasSize: Size = Size.Zero,
     offset: Offset = Offset.Zero,
     scale: Float = 1.0f,
+    bitmapScale: Float = 1.0f,
     svgConfig: SvgConfig = SvgConfig(),
     fontResolver: FastFontResolver,
 ): ImageBitmap? = withContext(Dispatchers.IO) {
@@ -145,7 +146,7 @@ suspend fun imageBitmapFromSvgAtScale(
     SVGCache.getCachedSVG(svgString)?.let { svg ->
         // add some extra space around the SVG to allow for panning
         // Ensure canvas size is at least as large as the SVG size, with some extra space for panning
-        val canvasExtension = 800f
+        val canvasExtension = 800f * bitmapScale
 
         // get SVG size from the document, or use the canvas size if not specified
         val svgSize = Size(
@@ -188,7 +189,10 @@ suspend fun imageBitmapFromSvgAtScale(
         // and then convert it to a Bitmap
         // this is required because AndroidSVG does not support scaling and offsetting directly
         val picture = Picture()
-        val canvas = picture.beginRecording((canvasSize.width + 2 * canvasExtension).toInt(), (canvasSize.height + 2 * canvasExtension).toInt())
+        val canvas = picture.beginRecording(
+            ((canvasSize.width + 2 * canvasExtension) * bitmapScale).toInt(),
+            ((canvasSize.height + 2 * canvasExtension) * bitmapScale).toInt()
+            )
 
         // Calculate initial scale to fit and center the SVG into the canvas
         val scaleX = canvasSize.width / svgSize.width
@@ -196,14 +200,14 @@ suspend fun imageBitmapFromSvgAtScale(
 
         // maintains aspect ratio while scaling to fit the canvas
         val initialScale =
-            minOf(scaleX, scaleY) * 1.0f // add some margin if required
+            minOf(scaleX, scaleY) * 1.0f * bitmapScale // add some margin if required
 
         val centeringX = (canvas.width - svgSize.width) / 2f
         val centeringY = (canvas.height - svgSize.height) / 2f
 
         Log.d(
             "SVG",
-            "imageBitmapFromSvgAtScale(): $scale, $offset, Center=$centeringX, $centeringY, initialScale=$initialScale"
+            "imageBitmapFromSvgAtScale(): $scale, ${offset * bitmapScale}, Center=$centeringX, $centeringY, initialScale=$initialScale"
         )
 
         // Bitmap background for debugging
@@ -215,7 +219,7 @@ suspend fun imageBitmapFromSvgAtScale(
         
         // Apply the offset and scale to the canvas
         // This allows us to pan and zoom the SVG
-        canvas.translate(offset.x, offset.y)
+        canvas.translate(offset.x * bitmapScale, offset.y * bitmapScale)
         canvas.scale(scale, scale, canvas.width / 2f, canvas.height / 2f)
 
         // Center and fit the SVG in the canvas        
@@ -280,6 +284,7 @@ fun ScalableCachedSvgImage(
     var renderJob by remember { mutableStateOf<Job?>(null) }
     var renderTime by remember { mutableLongStateOf(0L) }
 
+    val bitmapScale = 1f
 
     val fastFontResolver = remember(context) {
         FastFontResolver(context, "fonts");
@@ -299,6 +304,7 @@ fun ScalableCachedSvgImage(
                     canvasSize = canvasSize,
                     offset = renderOffset,
                     scale = renderScale,
+                    bitmapScale = bitmapScale,
                     svgConfig = svgConfig,
                     fontResolver = fastFontResolver
                 )
@@ -420,6 +426,7 @@ fun ScalableCachedSvgImage(
 
                             withTransform({
                                 translate(centeringX, centeringY)
+                                scale(1/bitmapScale, 1/bitmapScale, Offset(bitmap.width / 2f, bitmap.height / 2f))
                             }) {
                                 drawImage(image = bitmap)
                             }
@@ -436,7 +443,7 @@ fun ScalableCachedSvgImage(
             Text(
                 modifier = Modifier
                     .padding(6.dp),
-                text = "$title\nViewport: $scale, $offset\nCanvas: $renderScale, $renderOffset\nRender: $renderTime ms\nBitmap: ${currentBitmap?.width}x${currentBitmap?.height}"
+                text = "$title\nViewport: $scale, $offset\nCanvas: $renderScale, $renderOffset\nBitmap: ${currentBitmap?.width}x${currentBitmap?.height} ($renderTime ms)"
             )
         }
     }
