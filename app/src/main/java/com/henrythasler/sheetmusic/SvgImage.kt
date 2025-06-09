@@ -146,7 +146,7 @@ suspend fun imageBitmapFromSvgAtScale(
     SVGCache.getCachedSVG(svgString)?.let { svg ->
         // add some extra space around the SVG to allow for panning
         // Ensure canvas size is at least as large as the SVG size, with some extra space for panning
-        val canvasExtension = 800f * bitmapScale
+        val canvasExtension = 800f
 
         // get SVG size from the document, or use the canvas size if not specified
         val svgSize = Size(
@@ -284,7 +284,7 @@ fun ScalableCachedSvgImage(
     var renderJob by remember { mutableStateOf<Job?>(null) }
     var renderTime by remember { mutableLongStateOf(0L) }
 
-    val bitmapScale = 1f
+    val bitmapScale = 0.5f //0.70710677f   // 1/sqrt(2)
 
     val fastFontResolver = remember(context) {
         FastFontResolver(context, "fonts");
@@ -426,7 +426,11 @@ fun ScalableCachedSvgImage(
 
                             withTransform({
                                 translate(centeringX, centeringY)
-                                scale(1/bitmapScale, 1/bitmapScale, Offset(bitmap.width / 2f, bitmap.height / 2f))
+                                scale(
+                                    1 / bitmapScale,
+                                    1 / bitmapScale,
+                                    Offset(bitmap.width / 2f, bitmap.height / 2f)
+                                )
                             }) {
                                 drawImage(image = bitmap)
                             }
@@ -443,7 +447,7 @@ fun ScalableCachedSvgImage(
             Text(
                 modifier = Modifier
                     .padding(6.dp),
-                text = "$title\nViewport: $scale, $offset\nCanvas: $renderScale, $renderOffset\nBitmap: ${currentBitmap?.width}x${currentBitmap?.height} ($renderTime ms)"
+                text = "$title\nViewport: $scale, $offset\nCanvas: $renderScale, $renderOffset\nBitmap: ${"%.0f".format(bitmapScale * 100)}% (${currentBitmap?.width}x${currentBitmap?.height}) ($renderTime ms)"
             )
         }
     }

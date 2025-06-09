@@ -40,22 +40,6 @@ fun MusicViewerApp(
             viewModel.getVerovioVersion()
         }
 
-
-        val items = listOf(
-            NavigationItem(
-                title = "Notation",
-                selectedIcon = Icons.Filled.Favorite,
-                unselectedIcon = Icons.Outlined.Favorite,
-                route = Screen.Notation.route
-            ),
-            NavigationItem(
-                title = "Browser",
-                selectedIcon = Icons.Filled.Search,
-                unselectedIcon = Icons.Outlined.Search,
-                route = Screen.Browser.route
-            )
-        )
-
         Scaffold(
             topBar = {
                 TopNavigationBar(
@@ -63,9 +47,6 @@ fun MusicViewerApp(
                     viewModel = viewModel,
                 )
             }
-//            bottomBar = {
-//                BottomNavigationBar(navController = navController, items = items)
-//            }
         ) { innerPadding ->
             NavHost(
                 navController = navController,
@@ -98,6 +79,11 @@ fun MusicViewerApp(
                         assetPath = assetPath,
                         assetName = assetName
                     )
+                }
+                composable(
+                    route = Screen.Settings.route
+                ) {
+                    SettingsScreen(navController = navController, viewModel = viewModel)
                 }
             }
         }
