@@ -52,7 +52,7 @@ Java_com_henrythasler_sheetmusic_VerovioViewModel_renderData(JNIEnv *env, jobjec
         "smuflTextFont": "none",
         "header": "none",
         "footer": "none",
-        "lyricSize": 3,
+        "lyricSize": 4.5,
         "multiRestStyle": "block",
         "svgFormatRaw": true,
         "header": "auto",
