@@ -9,11 +9,13 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.outlined.Build
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -61,6 +63,7 @@ sealed class Screen(val route: String) {
             return "notation/$encodedFolder/$encodedFilename"
         }
     }
+    data object Settings : Screen("settings")
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -99,7 +102,7 @@ fun TopNavigationBar(
             }
         },
         actions = {
-            DropdownMenuWithDetails()
+            DropdownMenuWithDetails(navController)
 //            IconButton(onClick = { /* do something */ }) {
 //                Icon(
 //                    imageVector = Icons.Filled.Menu,
@@ -111,7 +114,7 @@ fun TopNavigationBar(
 }
 
 @Composable
-fun DropdownMenuWithDetails() {
+fun DropdownMenuWithDetails(navController: NavHostController,) {
     var expanded by remember { mutableStateOf(false) }
     val openAlertDialog = remember { mutableStateOf(false) }
 
@@ -123,9 +126,23 @@ fun DropdownMenuWithDetails() {
         onDismissRequest = { expanded = false }
     ) {
         DropdownMenuItem(
+            text = { Text("Settings") },
+            leadingIcon = { Icon(Icons.Outlined.Build, contentDescription = null) },
+            onClick = {
+                expanded = false
+                navController.navigate(Screen.Settings.route)
+            }
+        )
+
+        HorizontalDivider()
+
+        DropdownMenuItem(
             text = { Text("About") },
             leadingIcon = { Icon(Icons.Outlined.Info, contentDescription = null) },
-            onClick = { openAlertDialog.value = true }
+            onClick = {
+                expanded = false
+                openAlertDialog.value = true
+            }
         )
     }
 
