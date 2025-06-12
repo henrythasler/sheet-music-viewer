@@ -4,7 +4,6 @@ import android.util.Log
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -25,8 +24,6 @@ fun NotationScreen(
     val context = LocalContext.current
     var svgDocument by remember { mutableStateOf<String?>(null) }
     var engraveTimeMillis by remember { mutableLongStateOf(0L) }
-    val settings = useSettings()
-    val svgOverrideFont by settings.svgOverrideFont.collectAsState(initial = null)
 
     LaunchedEffect(Unit) {
         engraveTimeMillis = measureTimeMillis {
@@ -41,7 +38,7 @@ fun NotationScreen(
                 .fillMaxSize(),
             title = "$assetName ($engraveTimeMillis ms, ${svg.length/1024} KiB)",
             svgDocument = svg,
-            svgConfig = SvgConfig(null, if(svgOverrideFont != "off") svgOverrideFont else null ),
+            svgConfig = SvgConfig(null, "Edwin-Roman"),
             canvasConfig = CanvasConfig(0.25f, 32f, 100L),
         )
     }

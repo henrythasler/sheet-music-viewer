@@ -5,13 +5,132 @@ on:
     branches: [ main, develop ]
   pull_request:
     branches: [ main ]
-  release:
-    types: [ published ]    
-
-permissions:
-  contents: write    
 
 jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+        token: ${{ secrets.GITHUB_TOKEN }}
+      
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+        
+    - name: Set up Android NDK
+      uses: nttld/setup-ndk@v1
+      with:
+        ndk-version: r25c
+        
+    - name: Cache NDK
+      uses: actions/cache@v3
+      with:
+        path: |
+          ${{ env.ANDROID_NDK_ROOT }}
+        key: ${{ runner.os }}-ndk-r25c
+        
+    - name: Set NDK environment variables
+      run: |
+        echo "ANDROID_NDK_HOME=$ANDROID_NDK_ROOT" >> $GITHUB_ENV
+        echo "NDK_HOME=$ANDROID_NDK_ROOT" >> $GITHUB_ENV
+        
+    - name: Cache Gradle dependencies
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.gradle/caches
+          ~/.gradle/wrapper
+        key: ${{ runner.os }}-gradle-ndk-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties', '**/CMakeLists.txt', '**/*.cmake') }}
+        restore-keys: |
+          ${{ runner.os }}-gradle-ndk-
+          ${{ runner.os }}-gradle-
+          
+    - name: Grant execute permission for gradlew
+      run: chmod +x gradlew
+      
+    - name: Run unit tests
+      run: ./gradlew testDebugUnitTest
+      
+    - name: Generate test report
+      uses: dorny/test-reporter@v2
+      if: success() || failure()
+      with:
+        name: Unit Test Results
+        path: '**/build/test-results/testDebugUnitTest/TEST-*.xml'
+        reporter: java-junit
+
+  build:
+    needs: test
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+        token: ${{ secrets.GITHUB_TOKEN }}
+      
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+        
+    - name: Set up Android NDK
+      uses: nttld/setup-ndk@v1
+      with:
+        ndk-version: r25c
+        
+    - name: Cache NDK
+      uses: actions/cache@v3
+      with:
+        path: |
+          ${{ env.ANDROID_NDK_ROOT }}
+        key: ${{ runner.os }}-ndk-r25c
+        
+    - name: Set NDK environment variables
+      run: |
+        echo "ANDROID_NDK_HOME=$ANDROID_NDK_ROOT" >> $GITHUB_ENV
+        echo "NDK_HOME=$ANDROID_NDK_ROOT" >> $GITHUB_ENV
+        
+    - name: Cache Gradle dependencies
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.gradle/caches
+          ~/.gradle/wrapper
+        key: ${{ runner.os }}-gradle-ndk-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties', '**/CMakeLists.txt', '**/*.cmake') }}
+        restore-keys: |
+          ${{ runner.os }}-gradle-ndk-
+          ${{ runner.os }}-gradle-
+          
+    - name: Grant execute permission for gradlew
+      run: chmod +x gradlew
+      
+    - name: Build debug APK
+      run: ./gradlew assembleDebug
+      
+    - name: Upload debug APK
+      uses: actions/upload-artifact@v4
+      with:
+        name: debug-apk
+        path: app/build/outputs/apk/debug/*.apk
+        
+    - name: Build release APK (unsigned)
+      run: ./gradlew assembleRelease
+      
+    - name: Upload release APK
+      uses: actions/upload-artifact@v4
+      with:
+        name: release-apk-unsigned
+        path: app/build/outputs/apk/release/*.apk
+
   lint:
     runs-on: ubuntu-latest
     
@@ -61,160 +180,14 @@ jobs:
       with:
         name: lint-results
         path: app/build/reports/lint-results-debug.html
-    
-  test:
-    runs-on: ubuntu-latest
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      with:
-        submodules: recursive
-        token: ${{ secrets.GITHUB_TOKEN }}
-      
-    - name: Set up JDK 17
-      uses: actions/setup-java@v4
-      with:
-        java-version: '17'
-        distribution: 'temurin'
-        
-    - name: Set up Android NDK
-      uses: nttld/setup-ndk@v1
-      with:
-        ndk-version: r25c
-        
-    # Do a quick Gradle command to ensure paths exist for caching
-    - name: Setup Gradle
-      run: ./gradlew --version
-            
-    - name: Cache NDK
-      uses: actions/cache@v3
-      with:
-        path: |
-          ${{ env.ANDROID_NDK_ROOT }}
-        key: ${{ runner.os }}-ndk-r25c
-        
-    - name: Set NDK environment variables
-      run: |
-        echo "ANDROID_NDK_HOME=$ANDROID_NDK_ROOT" >> $GITHUB_ENV
-        echo "NDK_HOME=$ANDROID_NDK_ROOT" >> $GITHUB_ENV
-      
-    - name: Cache Gradle dependencies
-      uses: actions/cache@v3
-      with:
-        path: |
-          ~/.gradle/caches
-          ~/.gradle/wrapper
-        key: ${{ runner.os }}-gradle-ndk-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties', '**/CMakeLists.txt', '**/*.cmake') }}
-        restore-keys: |
-          ${{ runner.os }}-gradle-ndk-
-          ${{ runner.os }}-gradle-
-          
-    - name: Grant execute permission for gradlew
-      run: chmod +x gradlew
-      
-    - name: Run unit tests
-      run: ./gradlew testDebugUnitTest
-      
-    - name: Generate test report
-      uses: dorny/test-reporter@v2
-      if: success() || failure()
-      with:
-        name: Unit Test Results
-        path: '**/build/test-results/testDebugUnitTest/TEST-*.xml'
-        reporter: java-junit
-
-  build:
-    if: github.event_name != 'release'
-    needs: test
-    runs-on: ubuntu-latest
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      with:
-        submodules: recursive
-        token: ${{ secrets.GITHUB_TOKEN }}
-      
-    - name: Set up JDK 17
-      uses: actions/setup-java@v4
-      with:
-        java-version: '17'
-        distribution: 'temurin'
-        
-    - name: Set up Android NDK
-      uses: nttld/setup-ndk@v1
-      with:
-        ndk-version: r25c
-        
-    - name: Cache NDK
-      uses: actions/cache@v3
-      with:
-        path: |
-          ${{ env.ANDROID_NDK_ROOT }}
-        key: ${{ runner.os }}-ndk-r25c
-        
-    - name: Set NDK environment variables
-      run: |
-        echo "ANDROID_NDK_HOME=$ANDROID_NDK_ROOT" >> $GITHUB_ENV
-        echo "NDK_HOME=$ANDROID_NDK_ROOT" >> $GITHUB_ENV
-        
-    # Do a quick Gradle command to ensure paths exist for caching
-    - name: Setup Gradle
-      run: ./gradlew --version
-
-    - name: Cache Gradle dependencies
-      uses: actions/cache@v3
-      with:
-        path: |
-          ~/.gradle/caches
-          ~/.gradle/wrapper
-        key: ${{ runner.os }}-gradle-ndk-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties', '**/CMakeLists.txt', '**/*.cmake') }}
-        restore-keys: |
-          ${{ runner.os }}-gradle-ndk-
-          ${{ runner.os }}-gradle-
-          
-    - name: Grant execute permission for gradlew
-      run: chmod +x gradlew
-
-    - name: Copy Verovio data assets
-      run: |
-        cp -r app/src/main/cpp/verovio/data/ app/src/main/assets/
-        echo "Verovio data copied to assets."
-      
-    - name: Build debug APK
-      run: ./gradlew assembleDebug
-      
-    - name: Upload debug APK
-      uses: actions/upload-artifact@v4
-      with:
-        name: debug-apk
-        path: app/build/outputs/apk/debug/*.apk
-        
-    - name: Build release APK (unsigned)
-      run: ./gradlew assembleRelease
-      
-    - name: Upload release APK
-      uses: actions/upload-artifact@v4
-      with:
-        name: release-apk-unsigned
-        path: app/build/outputs/apk/release/*.apk
 
   # Optional: Build signed release APK (requires secrets)
   release:
-    if: github.event_name == 'release'
-    needs: test
-    runs-on: ubuntu-latest   
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    needs: [test, build, lint]
+    runs-on: ubuntu-latest
+    
     steps:
-    - name: Get existing release info
-      id: get_release
-      run: |
-        release=$(gh api repos/${{ github.repository }}/releases/tags/${{ github.ref_name }})
-        release_body=$(echo "$release" | jq -r .body | sed ':a;N;$!ba;s/\n/\\n/g')
-        echo "release_body=$release_body" >> $GITHUB_OUTPUT
-      env:
-        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
     - name: Checkout code
       uses: actions/checkout@v4
       with:
@@ -256,7 +229,6 @@ jobs:
       run: |
         if [ -n "${{ secrets.KEYSTORE_BASE64 }}" ] && [ -n "${{ secrets.KEYSTORE_PASSWORD }}" ] && [ -n "${{ secrets.KEY_ALIAS }}" ] && [ -n "${{ secrets.KEY_PASSWORD }}" ]; then
           echo "secrets_exist=true" >> $GITHUB_OUTPUT
-          echo "Signing secrets were found. Building **signed** APK."
         else
           echo "secrets_exist=false" >> $GITHUB_OUTPUT
           echo "Warning: Signing secrets not found. Building unsigned APK."
@@ -265,15 +237,8 @@ jobs:
     - name: Decode keystore
       if: steps.check_secrets.outputs.secrets_exist == 'true'
       run: |
-        echo "current working directory: $(pwd)"
-        echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > app/keystore.jks
         echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > keystore.jks
-
-    - name: Copy Verovio data assets
-      run: |
-        cp -r app/src/main/cpp/verovio/data/ app/src/main/assets/
-        echo "Verovio data copied to assets."
-
+        
     - name: Build signed release APK
       if: steps.check_secrets.outputs.secrets_exist == 'true'
       env:
@@ -281,92 +246,22 @@ jobs:
         KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
         KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
       run: |
-        echo "current working directory: $(pwd)"
         ./gradlew assembleRelease \
           -Pandroid.injected.signing.store.file=keystore.jks \
           -Pandroid.injected.signing.store.password=$KEYSTORE_PASSWORD \
           -Pandroid.injected.signing.key.alias=$KEY_ALIAS \
           -Pandroid.injected.signing.key.password=$KEY_PASSWORD
-
-        # Rename APKs with descriptive names
-        cd app/build/outputs/apk/release/
-        for apk in *.apk; do
-          if [[ $apk == *"universal"* ]]; then
-            mv "$apk" "verovio-demo-${{ github.event.release.tag_name }}-universal.apk"
-          elif [[ $apk == *"arm64-v8a"* ]]; then
-            mv "$apk" "verovio-demo-${{ github.event.release.tag_name }}-arm64.apk"
-          elif [[ $apk == *"armeabi-v7a"* ]]; then
-            mv "$apk" "verovio-demo-${{ github.event.release.tag_name }}-arm32.apk"
-          elif [[ $apk == *"x86_64"* ]]; then
-            mv "$apk" "verovio-demo-${{ github.event.release.tag_name }}-x86_64.apk"
-          else
-            mv "$apk" "verovio-demo-${{ github.event.release.tag_name }}.apk"
-          fi
-        done    
-    
+          
     - name: Build unsigned release APK (fallback)
       if: steps.check_secrets.outputs.secrets_exist == 'false'
       run: ./gradlew assembleRelease
-
-    - name: Generate QR Code for APK download
-      run: |
-        # Install qrencode (for generating QR codes)
-        sudo apt-get update && sudo apt-get install -y qrencode
-        
-        # Generate QR code for direct APK download
-        qrencode -o download-qr.png "https://github.com/${{ github.repository }}/releases/download/${{ github.event.release.tag_name }}/verovio-demo-${{ github.event.release.tag_name }}-universal.apk"        
-        echo "QR code generated for download link."
-             
+          
     - name: Upload signed release APK
       if: steps.check_secrets.outputs.secrets_exist == 'true'
       uses: actions/upload-artifact@v4
       with:
         name: release-apk-signed
         path: app/build/outputs/apk/release/*.apk
-
-    - name: Upload release APK to GitHub Release
-      if: steps.check_secrets.outputs.secrets_exist == 'true'
-      uses: softprops/action-gh-release@v2
-      with:
-        files: |
-          app/build/outputs/apk/release/*.apk
-          download-qr.png
-        tag_name: ${{ github.event.release.tag_name }}
-        body: |
-          ${{ steps.get_release.outputs.release_body }}
-          ## Download Instructions
-          [verovio-demo-${{ github.event.release.tag_name }}-universal.apk](https://github.com/${{ github.repository }}/releases/download/${{ github.event.release.tag_name }}/verovio-demo-${{ github.event.release.tag_name }}-universal.apk)
-
-          Download Link as QR Code:
-          ![download-qr.png](https://github.com/${{ github.repository }}/releases/download/${{ github.event.release.tag_name }}/download-qr.png)
-
-          Architecture-specific (smaller file size):
-          - **ARM64 devices** (most modern phones): [verovio-demo-${{ github.event.release.tag_name }}-arm64.apk](https://github.com/${{ github.repository }}/releases/download/${{ github.event.release.tag_name }}/verovio-demo-${{ github.event.release.tag_name }}-arm64.apk)
-          - **ARM32 devices** (older phones): [verovio-demo-${{ github.event.release.tag_name }}-arm32.apk](https://github.com/${{ github.repository }}/releases/download/${{ github.event.release.tag_name }}/verovio-demo-${{ github.event.release.tag_name }}-arm32.apk)
-          - **x86_64 devices** (emulators/tablets): [verovio-demo-${{ github.event.release.tag_name }}-x86_64.apk](https://github.com/${{ github.repository }}/releases/download/${{ github.event.release.tag_name }}/verovio-demo-${{ github.event.release.tag_name }}-x86_64.apk)
-          
-          ## Installation Steps
-          1. **Download** the APK file using the link above. Use the QR code for convenience.
-            - You can scan the QR code with your mobile device's camera or a QR code scanner app.
-            - Alternatively, download it directly to your computer and transfer it to your device.
-          2. **Enable Unknown Sources**:
-            - Go to Settings > Security (or Privacy)
-            - Enable "Install apps from unknown sources" or "Unknown sources"
-            - Some devices: Settings > Apps > Special access > Install unknown apps
-          3. **Install the APK**:
-            - Open your file manager or Downloads folder
-            - Tap on the downloaded APK file
-            - Follow the installation prompts
-          
-          ## Troubleshooting
-          - **"App not installed"**: Enable Unknown Sources and try again
-          - **"Package appears to be corrupt"**: Re-download the APK
-          - **"App keeps crashing"**: Check if your device architecture is supported
-          
-          ## Device Requirements
-          - Android 8.0 (API level 26) or higher
-          - ARM64, ARM32, or x86_64 architecture
-          - Minimum 100MB free storage
 
     - name: Upload unsigned release APK
       if: steps.check_secrets.outputs.secrets_exist == 'false'
@@ -377,4 +272,4 @@ jobs:
         
     - name: Clean up keystore
       if: always()
-      run: rm -f keystore.jks && rm -f app/keystore.jks
+      run: rm -f keystore.jks

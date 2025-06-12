@@ -1,49 +1,27 @@
 package com.henrythasler.sheetmusic
 
-import android.content.Intent
 import android.net.Uri
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.height
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.outlined.Build
-import androidx.compose.material.icons.outlined.Info
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults.topAppBarColors
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.text.withStyle
-import androidx.compose.ui.unit.dp
+import androidx.navigation.NavDirections
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
-import androidx.core.net.toUri
+import kotlinx.coroutines.selects.select
 
 data class NavigationItem(
     val title: String,
@@ -63,7 +41,6 @@ sealed class Screen(val route: String) {
             return "notation/$encodedFolder/$encodedFilename"
         }
     }
-    data object Settings : Screen("settings")
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -102,110 +79,14 @@ fun TopNavigationBar(
             }
         },
         actions = {
-            DropdownMenuWithDetails(navController)
-//            IconButton(onClick = { /* do something */ }) {
-//                Icon(
-//                    imageVector = Icons.Filled.Menu,
-//                    contentDescription = "Localized description"
-//                )
-//            }
+            IconButton(onClick = { /* do something */ }) {
+                Icon(
+                    imageVector = Icons.Filled.Menu,
+                    contentDescription = "Localized description"
+                )
+            }
         },
     )
-}
-
-@Composable
-fun DropdownMenuWithDetails(navController: NavHostController,) {
-    var expanded by remember { mutableStateOf(false) }
-    val openAlertDialog = remember { mutableStateOf(false) }
-
-    IconButton(onClick = { expanded = !expanded }) {
-        Icon(Icons.Default.MoreVert, contentDescription = "More options")
-    }
-    DropdownMenu(
-        expanded = expanded,
-        onDismissRequest = { expanded = false }
-    ) {
-        DropdownMenuItem(
-            text = { Text("Settings") },
-            leadingIcon = { Icon(Icons.Outlined.Build, contentDescription = null) },
-            onClick = {
-                expanded = false
-                navController.navigate(Screen.Settings.route)
-            }
-        )
-
-        HorizontalDivider()
-
-        DropdownMenuItem(
-            text = { Text("About") },
-            leadingIcon = { Icon(Icons.Outlined.Info, contentDescription = null) },
-            onClick = {
-                expanded = false
-                openAlertDialog.value = true
-            }
-        )
-    }
-
-    when {
-        // ...
-        openAlertDialog.value -> {
-            AlertDialog(
-                icon = {
-                    Icon(
-                        painter = painterResource(R.drawable.verovio_logo_big),
-                        contentDescription = "Example Icon"
-                    )
-                },
-                title = {
-                    Text(text = "Verovio Demo")
-                },
-                text = {
-                    Column {
-                        Text("by Henry Thasler")
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        val verovioLink = buildAnnotatedString {
-                            append("See ")
-                            pushStringAnnotation(tag = "URL", annotation = "https://www.verovio.org")
-                            withStyle(style = SpanStyle(textDecoration = TextDecoration.Underline, color = MaterialTheme.colorScheme.primary)) {
-                                append("www.verovio.org")
-                            }
-                            pop()
-                        }
-                        val context = LocalContext.current
-                        Text(
-                            text = verovioLink,
-                            style = MaterialTheme.typography.bodyMedium,
-                            modifier = Modifier
-                                .clickable {
-                                    val annotation = verovioLink.getStringAnnotations("URL", 0, verovioLink.length)
-                                        .firstOrNull()
-                                    annotation?.let {
-                                        val intent = Intent(
-                                            Intent.ACTION_VIEW,
-                                            it.item.toUri()
-                                        )
-                                        context.startActivity(intent)
-                                    }
-                                }
-                        )
-                    }
-                },
-                onDismissRequest = {
-                    openAlertDialog.value = false
-                },
-                confirmButton = {
-                    TextButton(
-                        onClick = {
-                            openAlertDialog.value = false
-                        }
-                    ) {
-                        Text("OK")
-                    }
-                },
-            )
-        }
-    }
 }
 
 @Composable

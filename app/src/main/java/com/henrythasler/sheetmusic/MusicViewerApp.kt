@@ -11,7 +11,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -35,65 +34,70 @@ fun MusicViewerApp(
         val navController = rememberNavController()
         val viewModel = remember { VerovioViewModel() }
         val context = LocalContext.current
-        // Create repository and viewmodel directly
-        val settingsRepository = remember { SettingsRepository(context) }
-        val settingsViewModel = remember { SettingsViewModel(settingsRepository) }
 
         LaunchedEffect(true) {
             viewModel.extractAssets(context)
             viewModel.getVerovioVersion()
         }
 
-        CompositionLocalProvider(LocalSettingsViewModel provides settingsViewModel) {
-            Scaffold(
-                topBar = {
-                    TopNavigationBar(
+
+        val items = listOf(
+            NavigationItem(
+                title = "Notation",
+                selectedIcon = Icons.Filled.Favorite,
+                unselectedIcon = Icons.Outlined.Favorite,
+                route = Screen.Notation.route
+            ),
+            NavigationItem(
+                title = "Browser",
+                selectedIcon = Icons.Filled.Search,
+                unselectedIcon = Icons.Outlined.Search,
+                route = Screen.Browser.route
+            )
+        )
+
+        Scaffold(
+            topBar = {
+                TopNavigationBar(
+                    navController = navController,
+                    viewModel = viewModel,
+                )
+            }
+//            bottomBar = {
+//                BottomNavigationBar(navController = navController, items = items)
+//            }
+        ) { innerPadding ->
+            NavHost(
+                navController = navController,
+                startDestination = Screen.Notation.createRoute("mei/tempo/tempo-003.mei", "tempo-003.mei"),
+                modifier = Modifier.padding(innerPadding)
+            ) {
+                composable(
+                    route = Screen.Browser.route
+                ) {
+                    BrowserScreen(navController = navController, viewModel = viewModel)
+                }
+                composable(
+                    route = Screen.Notation.route,
+                    arguments = listOf(
+                        navArgument("encodedFolderPath") { type = NavType.StringType },
+                        navArgument("filename") { type = NavType.StringType }
+                    )
+                ) { backStackEntry ->
+                    // Extract and decode the arguments
+                    val encodedFolderPath = backStackEntry.arguments?.getString("encodedFolderPath") ?: ""
+                    val encodedFilename = backStackEntry.arguments?.getString("filename") ?: ""
+
+                    // Decode the folder path
+                    val assetPath = Uri.decode(encodedFolderPath)
+                    val assetName = Uri.decode(encodedFilename)
+
+                    NotationScreen(
                         navController = navController,
                         viewModel = viewModel,
+                        assetPath = assetPath,
+                        assetName = assetName
                     )
-                }
-            ) { innerPadding ->
-                NavHost(
-                    navController = navController,
-                    startDestination = Screen.Notation.createRoute(
-                        "mei/tempo/tempo-003.mei",
-                        "tempo-003.mei"
-                    ),
-                    modifier = Modifier.padding(innerPadding)
-                ) {
-                    composable(
-                        route = Screen.Browser.route
-                    ) {
-                        BrowserScreen(navController = navController, viewModel = viewModel)
-                    }
-                    composable(
-                        route = Screen.Notation.route,
-                        arguments = listOf(
-                            navArgument("encodedFolderPath") { type = NavType.StringType },
-                            navArgument("filename") { type = NavType.StringType }
-                        )
-                    ) { backStackEntry ->
-                        // Extract and decode the arguments
-                        val encodedFolderPath =
-                            backStackEntry.arguments?.getString("encodedFolderPath") ?: ""
-                        val encodedFilename = backStackEntry.arguments?.getString("filename") ?: ""
-
-                        // Decode the folder path
-                        val assetPath = Uri.decode(encodedFolderPath)
-                        val assetName = Uri.decode(encodedFilename)
-
-                        NotationScreen(
-                            navController = navController,
-                            viewModel = viewModel,
-                            assetPath = assetPath,
-                            assetName = assetName
-                        )
-                    }
-                    composable(
-                        route = Screen.Settings.route
-                    ) {
-                        SettingsScreen()
-                    }
                 }
             }
         }
