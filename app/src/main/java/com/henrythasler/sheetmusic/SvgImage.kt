@@ -19,6 +19,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableLongStateOf
@@ -284,14 +285,15 @@ fun ScalableCachedSvgImage(
     var renderJob by remember { mutableStateOf<Job?>(null) }
     var renderTime by remember { mutableLongStateOf(0L) }
 
-    val bitmapScale = 0.5f //0.70710677f   // 1/sqrt(2)
+    val settings = useSettings()
+    val bitmapScale = SvgRenderResolutionMapping[settings.svgRenderResolution.collectAsState(initial = null).value] ?: 1f
 
     val fastFontResolver = remember(context) {
         FastFontResolver(context, "fonts");
     }
 
     // Re-render with debouncing
-    LaunchedEffect(renderOffset, renderScale) {
+    LaunchedEffect(renderOffset, renderScale, bitmapScale) {
         renderJob?.cancelAndJoin()
 
         // Start new render job with debounce
