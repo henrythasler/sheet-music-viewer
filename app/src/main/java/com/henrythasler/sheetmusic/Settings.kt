@@ -1,5 +1,6 @@
 package com.henrythasler.sheetmusic
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -10,6 +11,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardColors
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
@@ -30,6 +34,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.platform.LocalContext
@@ -52,6 +57,7 @@ import androidx.compose.ui.unit.sp
 fun SettingsScreen() {
     Column(
         modifier = Modifier
+            .background(MaterialTheme.colorScheme.surfaceVariant)
             .fillMaxSize()
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -61,17 +67,52 @@ fun SettingsScreen() {
             style = MaterialTheme.typography.headlineSmall
         )
 
-        Text(
-            text = "SVG Font Override",
-            style = MaterialTheme.typography.bodyLarge
-        )
-        AdvancedFontPickerDropdown()
+        Card(
+            modifier = Modifier
+//                .padding(16.dp)
+                .fillMaxWidth(),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surface,
+            ),
+        ) {
+            Column(
+                modifier = Modifier
+                .padding(16.dp)
+                .fillMaxWidth()
+            ) {
 
-        Text(
-            text = "SVG Rendering Resolution",
-            style = MaterialTheme.typography.bodyLarge
-        )
-        BitmapQualitySelector()
+            Text(
+                modifier = Modifier
+                    .padding(bottom = 16.dp),
+                text = "SVG Font Override",
+                style = MaterialTheme.typography.bodyLarge
+            )
+            AdvancedFontPickerDropdown()
+            }
+        }
+
+        Card(
+            modifier = Modifier
+//                .padding(16.dp)
+                .fillMaxWidth(),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surface,
+            ),
+        ) {
+            Column(
+                modifier = Modifier
+                    .padding(16.dp)
+                    .fillMaxWidth()
+            ) {
+                Text(
+                    modifier = Modifier
+                        .padding(bottom = 16.dp),
+                    text = "SVG Rendering Resolution",
+                    style = MaterialTheme.typography.bodyLarge
+                )
+                BitmapQualitySelector()
+            }
+        }
     }
 }
 
@@ -214,7 +255,7 @@ fun AdvancedFontPickerDropdown() {
             value = selectedFontName,
             onValueChange = { },
             readOnly = true,
-            label = { Text("Select Font") },
+//            label = { Text("Select Font") },
             supportingText = {
                 Text("Set the font that will be used to override music document font definitions.")
             },

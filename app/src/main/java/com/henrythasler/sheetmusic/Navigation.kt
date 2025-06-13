@@ -53,7 +53,6 @@ data class NavigationItem(
 )
 
 sealed class Screen(val route: String) {
-    data object Home : Screen("home")
     data object Browser : Screen("browser")
     data object Notation : Screen(route = "notation/{encodedFolderPath}/{filename}") {
         fun createRoute(folderPath: String, filename: String): String {
@@ -69,11 +68,13 @@ sealed class Screen(val route: String) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TopNavigationBar(
-    navController: NavHostController,
-    viewModel: VerovioViewModel,
+    onNavigateBack: () -> Unit,
+    onNavigateToSettings: () -> Unit,
+//    navController: NavHostController,
+//    viewModel: VerovioViewModel,
 ) {
-    val navBackStackEntry by navController.currentBackStackEntryAsState()
-    val currentRoute = navBackStackEntry?.destination?.route
+//    val navBackStackEntry by navController.currentBackStackEntryAsState()
+//    val currentRoute = navBackStackEntry?.destination?.route
 
     TopAppBar(
         colors = topAppBarColors(
@@ -82,7 +83,7 @@ fun TopNavigationBar(
         ),
         title = {
             Text(
-                text = "Verovio ${viewModel.verovioVersion.value}",
+                text = "Verovio Demo App",
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis
 
@@ -90,9 +91,10 @@ fun TopNavigationBar(
         },
         navigationIcon = {
             IconButton(
-                enabled = currentRoute != Screen.Browser.route,
+//                enabled = currentRoute != Screen.Browser.route,
                 onClick = {
-                    navController.navigate(Screen.Browser.route)
+                    onNavigateBack()
+//                    navController.navigate(Screen.Browser.route)
                 }
             ) {
                 Icon(
@@ -102,7 +104,11 @@ fun TopNavigationBar(
             }
         },
         actions = {
-            DropdownMenuWithDetails(navController)
+            DropdownMenuWithDetails(
+                onNavigateToSettings = {
+                    onNavigateToSettings()
+                }
+            )
 //            IconButton(onClick = { /* do something */ }) {
 //                Icon(
 //                    imageVector = Icons.Filled.Menu,
@@ -114,7 +120,7 @@ fun TopNavigationBar(
 }
 
 @Composable
-fun DropdownMenuWithDetails(navController: NavHostController,) {
+fun DropdownMenuWithDetails(onNavigateToSettings: () -> Unit) {
     var expanded by remember { mutableStateOf(false) }
     val openAlertDialog = remember { mutableStateOf(false) }
 
@@ -130,7 +136,7 @@ fun DropdownMenuWithDetails(navController: NavHostController,) {
             leadingIcon = { Icon(Icons.Outlined.Build, contentDescription = null) },
             onClick = {
                 expanded = false
-                navController.navigate(Screen.Settings.route)
+                onNavigateToSettings()
             }
         )
 

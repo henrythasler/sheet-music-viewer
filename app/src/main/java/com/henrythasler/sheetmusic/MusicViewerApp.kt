@@ -39,7 +39,7 @@ fun MusicViewerApp(
         val settingsRepository = remember { SettingsRepository(context) }
         val settingsViewModel = remember { SettingsViewModel(settingsRepository) }
 
-        LaunchedEffect(true) {
+        LaunchedEffect(Unit) {
             viewModel.extractAssets(context)
             viewModel.getVerovioVersion()
         }
@@ -48,17 +48,20 @@ fun MusicViewerApp(
             Scaffold(
                 topBar = {
                     TopNavigationBar(
-                        navController = navController,
-                        viewModel = viewModel,
+                        onNavigateBack = { navController.popBackStack() },
+                        onNavigateToSettings = { navController.navigate(Screen.Settings.route) },
+//                        navController = navController,
+//                        viewModel = viewModel,
                     )
                 }
             ) { innerPadding ->
                 NavHost(
                     navController = navController,
-                    startDestination = Screen.Notation.createRoute(
-                        "mei/tempo/tempo-003.mei",
-                        "tempo-003.mei"
-                    ),
+                    startDestination = Screen.Browser.route,
+//                    startDestination = Screen.Notation.createRoute(
+//                        "mei/tempo/tempo-003.mei",
+//                        "tempo-003.mei"
+//                    ),
                     modifier = Modifier.padding(innerPadding)
                 ) {
                     composable(

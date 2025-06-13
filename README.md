@@ -25,6 +25,13 @@ see [latest release](https://github.com/henrythasler/verovio-demo-app/releases/l
 1. Download FontForge AppImage from https://fontforge.org/en-US/downloads/gnulinux-dl/
 2. Re-generate font glyphs: `(cd app/src/main/cpp/verovio/fonts && ./generate_all.sh --fontforge FontForge-2023-01-01.AppImage)` (replace path to AppImage accordingly)
 
+## Feature Roadmap
+
+[ ] Fix Nav-Graph
+[ ] Limit panning and zooming to reasonable values
+[ ] New Color Palette (yellow/orange)
+[ ] Permanent Low-Res SVG bitmap overlay
+
 ## Known Issues
 
 - In App `build.gradle.kts`: Cmake requires additional `cppFlags += "-llog"` to avoid linker errors for Android log output which in turn generates a ton of warnings during the compile step.
