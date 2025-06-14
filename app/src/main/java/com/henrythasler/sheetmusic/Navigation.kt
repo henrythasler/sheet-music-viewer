@@ -5,7 +5,12 @@ import android.net.Uri
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.MoreVert
@@ -77,6 +82,7 @@ fun TopNavigationBar(
 //    val currentRoute = navBackStackEntry?.destination?.route
 
     TopAppBar(
+//        modifier = Modifier.windowInsetsPadding(WindowInsets.safeDrawing),
         colors = topAppBarColors(
             containerColor = MaterialTheme.colorScheme.primaryContainer,
             titleContentColor = MaterialTheme.colorScheme.primary,
@@ -91,6 +97,7 @@ fun TopNavigationBar(
         },
         navigationIcon = {
             IconButton(
+                modifier = Modifier.windowInsetsPadding(WindowInsets.displayCutout),
 //                enabled = currentRoute != Screen.Browser.route,
                 onClick = {
                     onNavigateBack()

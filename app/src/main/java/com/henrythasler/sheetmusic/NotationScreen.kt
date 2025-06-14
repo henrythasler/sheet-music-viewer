@@ -42,7 +42,13 @@ fun NotationScreen(
             title = "$assetName ($engraveTimeMillis ms, ${svg.length/1024} KiB)",
             svgDocument = svg,
             svgConfig = SvgConfig(null, if(svgOverrideFont != "off") svgOverrideFont else null ),
-            canvasConfig = CanvasConfig(0.25f, 32f, 100L),
+            canvasConfig = CanvasConfig(
+                minScale = 0.25f,
+                maxScale = 32f,
+                debounceDelayMs = 100L,
+                panLimit = 0f,
+                canvasExtension = 800f
+            ),
         )
     }
 }

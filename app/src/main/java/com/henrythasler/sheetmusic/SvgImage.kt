@@ -65,6 +65,10 @@ data class CanvasConfig(
     val maxScale: Float = 10f,
     val debounceDelayMs: Long = 300L, // Delay before rendering higher resolution
     val panLimit: Float = 0.5f,
+
+    // add some extra space (pixels) around the SVG to allow for panning
+    // Ensure canvas size is at least as large as the SVG size, with some extra space for panning
+    val canvasExtension: Float = 800f,
 )
 
 data class SvgConfig(
@@ -140,15 +144,12 @@ suspend fun imageBitmapFromSvgAtScale(
     scale: Float = 1.0f,
     bitmapScale: Float = 1.0f,
     svgConfig: SvgConfig = SvgConfig(),
+    canvasConfig: CanvasConfig = CanvasConfig(),
     fontResolver: FastFontResolver,
 ): ImageBitmap? = withContext(Dispatchers.IO) {
 
     // Load and render the SVG
     SVGCache.getCachedSVG(svgString)?.let { svg ->
-        // add some extra space around the SVG to allow for panning
-        // Ensure canvas size is at least as large as the SVG size, with some extra space for panning
-        val canvasExtension = 800f
-
         // get SVG size from the document, or use the canvas size if not specified
         val svgSize = Size(
             if (svg.documentWidth != -1f) svg.documentWidth else canvasSize.width,
@@ -191,8 +192,8 @@ suspend fun imageBitmapFromSvgAtScale(
         // this is required because AndroidSVG does not support scaling and offsetting directly
         val picture = Picture()
         val canvas = picture.beginRecording(
-            ((canvasSize.width + 2 * canvasExtension) * bitmapScale).toInt(),
-            ((canvasSize.height + 2 * canvasExtension) * bitmapScale).toInt()
+            ((canvasSize.width + 2 * canvasConfig.canvasExtension) * bitmapScale).toInt(),
+            ((canvasSize.height + 2 * canvasConfig.canvasExtension) * bitmapScale).toInt()
             )
 
         // Calculate initial scale to fit and center the SVG into the canvas
@@ -280,6 +281,9 @@ fun ScalableCachedSvgImage(
     var renderOffset by remember { mutableStateOf(Offset.Zero) }
     var renderScale by remember { mutableFloatStateOf(1f) }
 
+    var minScaleCurrent by remember { mutableFloatStateOf(canvasConfig.minScale) }
+    var maxScaleCurrent by remember { mutableFloatStateOf(canvasConfig.maxScale) }
+
     // Current bitmap and render job
     var currentBitmap by remember { mutableStateOf<ImageBitmap?>(null) }
     var renderJob by remember { mutableStateOf<Job?>(null) }
@@ -308,6 +312,7 @@ fun ScalableCachedSvgImage(
                     scale = renderScale,
                     bitmapScale = bitmapScale,
                     svgConfig = svgConfig,
+                    canvasConfig = canvasConfig,
                     fontResolver = fastFontResolver
                 )
             }
@@ -315,6 +320,11 @@ fun ScalableCachedSvgImage(
             // reset viewport transformation as the new bitmap already includes all transformations
             scale = 1f
             offset = Offset.Zero
+
+            // calculate new limits for canvas scaling from current renderScale
+            minScaleCurrent = canvasConfig.minScale / renderScale
+            maxScaleCurrent = canvasConfig.maxScale / renderScale
+
             Log.d(
                 "Canvas",
                 "imageBitmapFromSvgAtScale: ${currentBitmap?.width}x${currentBitmap?.height} took $renderTime ms"
@@ -336,10 +346,7 @@ fun ScalableCachedSvgImage(
             .pointerInput(Unit) {
                 detectTapGestures(
                     onDoubleTap = {
-                        // reset all transformations
-                        offset = Offset.Zero
-                        scale = 1f
-
+                        // reset transformations
                         renderScale = 1f
                         renderOffset = Offset.Zero
                     }
@@ -348,8 +355,7 @@ fun ScalableCachedSvgImage(
             .pointerInput(Unit) {
                 detectTransformGestures { centroid, pan, zoom, _ ->
                     // Calculate new scale with constraints
-                    val newScale =
-                        (scale * zoom).coerceIn(canvasConfig.minScale, canvasConfig.maxScale)
+                    val newScale = (scale * zoom).coerceIn(minScaleCurrent, maxScaleCurrent)
 
                     // Calculate the center of the canvas
                     val canvasCenterX = canvasSize.width / 2f
@@ -378,7 +384,7 @@ fun ScalableCachedSvgImage(
                     scale = newScale
                     offset = Offset(
                         (newOffset.x + pan.x), //.coerceIn(-maxPanX, maxPanX),
-                        (newOffset.y + pan.y), //.coerceIn(-maxPanY, maxPanY)
+                        (newOffset.y + pan.y)  //.coerceIn(-maxPanY, maxPanY)
                     )
 
                     // Calculate render values
@@ -390,10 +396,14 @@ fun ScalableCachedSvgImage(
                         renderOffset.x + renderFocusX - renderFocusX * (newRenderScale / renderScale),
                         renderOffset.y + renderFocusY - renderFocusY * (newRenderScale / renderScale)
                     )
+
+//                    val maxRenderPanX = canvasSize.width * canvasConfig.panLimit * newRenderScale
+//                    val maxRenderPanY = canvasSize.height * canvasConfig.panLimit * newRenderScale
+
                     renderScale = newRenderScale
                     renderOffset = Offset(
-                        (newRenderOffset.x + pan.x), //.coerceIn(-maxPanX, maxPanX),
-                        (newRenderOffset.y + pan.y), //.coerceIn(-maxPanY, maxPanY)
+                        (newRenderOffset.x + pan.x), //.coerceIn(-maxRenderPanX, maxRenderPanX),
+                        (newRenderOffset.y + pan.y)  //.coerceIn(-maxRenderPanY, maxRenderPanY)
                     )
 
                 }
