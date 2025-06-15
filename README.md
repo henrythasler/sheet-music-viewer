@@ -30,7 +30,7 @@ see [latest release](https://github.com/henrythasler/verovio-demo-app/releases/l
 [ ] Fix Nav-Graph
 [ ] Limit panning and zooming to reasonable values
 [ ] New Color Palette (yellow/orange)
-[ ] Permanent Low-Res SVG bitmap overlay
+[x] Permanent Low-Res SVG bitmap overlay
 
 ## Known Issues
 

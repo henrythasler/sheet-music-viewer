@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -31,7 +32,9 @@ import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.withTransform
@@ -281,11 +284,15 @@ fun ScalableCachedSvgImage(
     var renderOffset by remember { mutableStateOf(Offset.Zero) }
     var renderScale by remember { mutableFloatStateOf(1f) }
 
+    var overviewOffset by remember { mutableStateOf(Offset.Zero) }
+    var overviewScale by remember { mutableFloatStateOf(1f) }
+
     var minScaleCurrent by remember { mutableFloatStateOf(canvasConfig.minScale) }
     var maxScaleCurrent by remember { mutableFloatStateOf(canvasConfig.maxScale) }
 
     // Current bitmap and render job
     var currentBitmap by remember { mutableStateOf<ImageBitmap?>(null) }
+    var overviewBitmap by remember { mutableStateOf<ImageBitmap?>(null) }
     var renderJob by remember { mutableStateOf<Job?>(null) }
     var renderTime by remember { mutableLongStateOf(0L) }
 
@@ -315,7 +322,13 @@ fun ScalableCachedSvgImage(
                     canvasConfig = canvasConfig,
                     fontResolver = fastFontResolver
                 )
+                if(overviewBitmap == null) {
+                    overviewBitmap = currentBitmap
+                }
             }
+
+            overviewOffset = renderOffset
+            overviewScale = renderScale
 
             // reset viewport transformation as the new bitmap already includes all transformations
             scale = 1f
@@ -428,6 +441,21 @@ fun ScalableCachedSvgImage(
                         // Viewport background
                         drawRect(Color.Yellow.copy(alpha = 0.3f), Offset.Zero, viewportSize)
 
+                        overviewBitmap?.let { overview ->
+                            val centeringX = (canvasSize.width - overview.width) / 2f
+                            val centeringY = (canvasSize.height - overview.height) / 2f
+                            withTransform({
+                                translate(centeringX + overviewOffset.x, centeringY + overviewOffset.y)
+                                scale(
+                                    1 / bitmapScale * overviewScale,
+                                    1 / bitmapScale * overviewScale,
+                                    Offset(overview.width / 2f, overview.height / 2f)
+                                )
+                            }) {
+                                drawImage(image = overview)
+                            }
+                        }
+
                         currentBitmap?.let { bitmap ->
                             val centeringX = (canvasSize.width - bitmap.width) / 2f
                             val centeringY = (canvasSize.height - bitmap.height) / 2f
@@ -459,7 +487,7 @@ fun ScalableCachedSvgImage(
             Text(
                 modifier = Modifier
                     .padding(6.dp),
-                text = "$title\nViewport: $scale, $offset\nCanvas: $renderScale, $renderOffset\nBitmap: ${"%.0f".format(bitmapScale * 100)}% (${currentBitmap?.width}x${currentBitmap?.height}) ($renderTime ms)"
+                text = "$title\nViewport: $scale, $offset\nCanvas: $renderScale, $renderOffset\nOverview: $overviewScale, $overviewOffset\nBitmap: ${"%.0f".format(bitmapScale * 100)}% (${currentBitmap?.width}x${currentBitmap?.height}) ($renderTime ms)"
             )
         }
     }
