@@ -57,7 +57,7 @@ fun MusicViewerApp(
             ) { innerPadding ->
                 NavHost(
                     navController = navController,
-                    startDestination = Screen.Browser.route,
+                    startDestination = Screen.Home.route,
 //                    startDestination = Screen.Notation.createRoute(
 //                        "mei/tempo/tempo-003.mei",
 //                        "tempo-003.mei"
@@ -96,6 +96,17 @@ fun MusicViewerApp(
                         route = Screen.Settings.route
                     ) {
                         SettingsScreen()
+                    }
+                    composable(
+                        route = Screen.Home.route
+                    ) {
+                        HomeScreen(
+                            onNavigateToBrowser = { navController.navigate(Screen.Browser.route) },
+                            onNavigateToNotation = { filename ->
+                                navController.navigate(Screen.Notation.createRoute("", filename))
+                                                   },
+                            onNavigateToSettings = { navController.navigate(Screen.Settings.route) },
+                        )
                     }
                 }
             }

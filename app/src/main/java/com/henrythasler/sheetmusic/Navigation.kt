@@ -68,6 +68,7 @@ sealed class Screen(val route: String) {
         }
     }
     data object Settings : Screen("settings")
+    data object Home : Screen("home")
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -140,7 +141,7 @@ fun DropdownMenuWithDetails(onNavigateToSettings: () -> Unit) {
     ) {
         DropdownMenuItem(
             text = { Text("Settings") },
-            leadingIcon = { Icon(Icons.Outlined.Build, contentDescription = null) },
+            leadingIcon = { Icon(painter = painterResource(R.drawable.baseline_settings_24), contentDescription = null) },
             onClick = {
                 expanded = false
                 onNavigateToSettings()
