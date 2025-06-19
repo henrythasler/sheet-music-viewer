@@ -2,11 +2,6 @@ package com.henrythasler.sheetmusic
 
 import android.net.Uri
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.outlined.Favorite
-import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
@@ -58,10 +53,6 @@ fun MusicViewerApp(
                 NavHost(
                     navController = navController,
                     startDestination = Screen.Home.route,
-//                    startDestination = Screen.Notation.createRoute(
-//                        "mei/tempo/tempo-003.mei",
-//                        "tempo-003.mei"
-//                    ),
                     modifier = Modifier.padding(innerPadding)
                 ) {
                     composable(
@@ -103,7 +94,7 @@ fun MusicViewerApp(
                         HomeScreen(
                             onNavigateToBrowser = { navController.navigate(Screen.Browser.route) },
                             onNavigateToNotation = { filename ->
-                                navController.navigate(Screen.Notation.createRoute("", filename))
+                                navController.navigate(Screen.Notation.createRoute(filename, ""))
                                                    },
                             onNavigateToSettings = { navController.navigate(Screen.Settings.route) },
                         )

@@ -2,6 +2,10 @@ package com.henrythasler.sheetmusic
 
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
@@ -9,8 +13,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
@@ -21,6 +27,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
@@ -41,7 +48,6 @@ fun HomeScreen(
             .fillMaxSize()
             .padding(16.dp)
         ,
-//        verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Spacer(modifier = Modifier.height(50.dp))
@@ -64,16 +70,69 @@ fun HomeScreen(
                 textAlign = TextAlign.Center
             )
         }
+
+        Spacer(modifier = Modifier.height(32.dp))
+        Text("select example:")
         Spacer(modifier = Modifier.height(16.dp))
-
-        Button(onClick = { onNavigateToBrowser() }) {
-            Text("Sheet Music Browser")
-        }
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-
+        FavouritesRow(onNavigateToNotation)
 //        CarouselExample()
+
+        Spacer(modifier = Modifier.height(32.dp))
+        Button(onClick = { onNavigateToBrowser() }) {
+            Text("browse all examples")
+        }
+    }
+}
+
+@Composable
+fun FavouritesRow(
+    onNavigateToNotation: (fileName: String) -> Unit = {},
+    ) {
+    data class MeiItem(
+        val path: String,
+        val name: String
+    )
+
+    val favourites = remember {
+        listOf(
+            MeiItem("mei/tempo/tempo-003.mei", "tempo-003.mei"),
+            MeiItem("mei/chord/chord-005.mei", "chord-005.mei"),
+            MeiItem("mei/lyric/lyric-004.mei", "lyric-004.mei"),
+            MeiItem("mei/arpeg/arpeg-001.mei", "arpeg-001.mei"),
+            MeiItem("mei/Costeley_Je_vois_de_glissantes_eaux.mei", "Costeley_Je_vois_de_glissantes_eaux.mei"),
+        )
+    }
+
+    LazyRow(
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        favourites.forEach { item ->
+            item {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .size(128.dp)
+                        .background(Color.White)
+                        .clickable {
+                            onNavigateToNotation(item.path)
+                        }
+                ) {
+                    Image(
+                        modifier = Modifier
+                            .align(Alignment.TopCenter)
+                            .size(96.dp),
+                        painter = painterResource(id = R.drawable.mei_logo_simple_light),
+                        contentDescription = item.path,
+//                        contentScale = ContentScale.Crop
+                    )
+                    Text(
+                        modifier = Modifier
+                            .align(Alignment.BottomCenter),
+                        text = item.name
+                    )
+                }
+            }
+        }
     }
 }
 
