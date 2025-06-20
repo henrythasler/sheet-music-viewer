@@ -45,8 +45,8 @@ fun MusicViewerApp(
                     TopNavigationBar(
                         onNavigateBack = { navController.popBackStack() },
                         onNavigateToSettings = { navController.navigate(Screen.Settings.route) },
-//                        navController = navController,
-//                        viewModel = viewModel,
+                        navController = navController,
+                        viewModel = viewModel,
                     )
                 }
             ) { innerPadding ->

@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.carousel.HorizontalUncontainedCarousel
@@ -33,6 +34,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.LineBreak
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 
@@ -70,17 +72,23 @@ fun HomeScreen(
                 textAlign = TextAlign.Center
             )
         }
-
-        Spacer(modifier = Modifier.height(32.dp))
-        Text("select example:")
         Spacer(modifier = Modifier.height(16.dp))
+        HorizontalDivider(thickness = 2.dp)
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(
+            text = "Examples Gallery",
+            style = MaterialTheme.typography.headlineSmall
+        )
+        Spacer(modifier = Modifier.height(8.dp))
         FavouritesRow(onNavigateToNotation)
 //        CarouselExample()
 
-        Spacer(modifier = Modifier.height(32.dp))
+        Spacer(modifier = Modifier.height(16.dp))
         Button(onClick = { onNavigateToBrowser() }) {
-            Text("browse all examples")
+            Text("Browse all examples")
         }
+        Spacer(modifier = Modifier.height(16.dp))
+        HorizontalDivider(thickness = 2.dp)
     }
 }
 
@@ -128,7 +136,9 @@ fun FavouritesRow(
                     Text(
                         modifier = Modifier
                             .align(Alignment.BottomCenter),
-                        text = item.name
+                        text = item.name,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
             }

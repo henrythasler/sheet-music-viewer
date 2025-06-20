@@ -4,23 +4,20 @@ import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.safeDrawing
-import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.outlined.Build
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -42,13 +39,12 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextDecoration
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
+import androidx.core.net.toUri
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
-import androidx.core.net.toUri
 
 data class NavigationItem(
     val title: String,
@@ -76,11 +72,11 @@ sealed class Screen(val route: String) {
 fun TopNavigationBar(
     onNavigateBack: () -> Unit,
     onNavigateToSettings: () -> Unit,
-//    navController: NavHostController,
-//    viewModel: VerovioViewModel,
+    navController: NavHostController,
+    viewModel: VerovioViewModel,
 ) {
-//    val navBackStackEntry by navController.currentBackStackEntryAsState()
-//    val currentRoute = navBackStackEntry?.destination?.route
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = navBackStackEntry?.destination?.route
 
     TopAppBar(
 //        modifier = Modifier.windowInsetsPadding(WindowInsets.safeDrawing),
@@ -89,12 +85,16 @@ fun TopNavigationBar(
             titleContentColor = MaterialTheme.colorScheme.primary,
         ),
         title = {
-            Text(
-                text = "Verovio Demo App",
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis
-
-            )
+            Column {
+                Text(
+                    text = "Verovio Demo",
+                    style = MaterialTheme.typography.titleLarge
+                )
+                Text(
+                    text = viewModel.verovioVersion.value?:"",
+                    style = MaterialTheme.typography.titleSmall
+                )
+            }
         },
         navigationIcon = {
             IconButton(
@@ -112,52 +112,66 @@ fun TopNavigationBar(
             }
         },
         actions = {
-            DropdownMenuWithDetails(
-                onNavigateToSettings = {
-                    onNavigateToSettings()
-                }
+            ActionMenu(
+                onNavigateToSettings = onNavigateToSettings,
+                enableSettingsButton = currentRoute == Screen.Notation.route
             )
-//            IconButton(onClick = { /* do something */ }) {
-//                Icon(
-//                    imageVector = Icons.Filled.Menu,
-//                    contentDescription = "Localized description"
-//                )
-//            }
         },
     )
 }
 
 @Composable
-fun DropdownMenuWithDetails(onNavigateToSettings: () -> Unit) {
+fun ActionMenu(
+    onNavigateToSettings: () -> Unit,
+    enableSettingsButton: Boolean = true,
+) {
     var expanded by remember { mutableStateOf(false) }
     val openAlertDialog = remember { mutableStateOf(false) }
 
-    IconButton(onClick = { expanded = !expanded }) {
-        Icon(Icons.Default.MoreVert, contentDescription = "More options")
-    }
-    DropdownMenu(
-        expanded = expanded,
-        onDismissRequest = { expanded = false }
-    ) {
-        DropdownMenuItem(
-            text = { Text("Settings") },
-            leadingIcon = { Icon(painter = painterResource(R.drawable.baseline_settings_24), contentDescription = null) },
-            onClick = {
-                expanded = false
-                onNavigateToSettings()
+    Row {
+        if(enableSettingsButton) {
+            IconButton(
+                modifier = Modifier
+                    .windowInsetsPadding(WindowInsets.displayCutout),
+//                enabled = currentRoute != Screen.Browser.route,
+                onClick = {
+                    onNavigateToSettings()
+                }
+            ) {
+                Icon(
+                    painter = painterResource(R.drawable.baseline_settings_24),
+                    contentDescription = null
+                )
             }
-        )
+        }
 
-        HorizontalDivider()
+        IconButton(onClick = { expanded = !expanded }) {
+            Icon(Icons.Default.MoreVert, contentDescription = "More options")
+        }
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false }
+        ) {
+//        DropdownMenuItem(
+//            text = { Text("Settings") },
+//            leadingIcon = { Icon(painter = painterResource(R.drawable.baseline_settings_24), contentDescription = null) },
+//            onClick = {
+//                expanded = false
+//                onNavigateToSettings()
+//            }
+//        )
+//
+//        HorizontalDivider()
 
-        DropdownMenuItem(
-            text = { Text("About") },
-            leadingIcon = { Icon(Icons.Outlined.Info, contentDescription = null) },
-            onClick = {
-                expanded = false
-                openAlertDialog.value = true
-            }
-        )
+            DropdownMenuItem(
+                text = { Text("About") },
+                leadingIcon = { Icon(Icons.Outlined.Info, contentDescription = null) },
+                onClick = {
+                    expanded = false
+                    openAlertDialog.value = true
+                }
+            )
+        }
     }
 
     when {
