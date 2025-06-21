@@ -4,13 +4,18 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardColors
 import androidx.compose.material3.CardDefaults
@@ -19,11 +24,15 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults.topAppBarColors
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -47,73 +56,128 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
+@Preview(
+    backgroundColor = 0xFFFFFFFF,
+    showBackground = true,
+)
 @Composable
-fun SettingsScreen() {
-    Column(
-        modifier = Modifier
-            .background(MaterialTheme.colorScheme.surfaceVariant)
-            .fillMaxSize()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        Text(
-            text = "Settings",
-            style = MaterialTheme.typography.headlineSmall
-        )
-
-        Card(
-            modifier = Modifier
-//                .padding(16.dp)
-                .fillMaxWidth(),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surface,
-            ),
-        ) {
-            Column(
-                modifier = Modifier
-                .padding(16.dp)
-                .fillMaxWidth()
-            ) {
-
-            Text(
-                modifier = Modifier
-                    .padding(bottom = 16.dp),
-                text = "SVG Font Override",
-                style = MaterialTheme.typography.bodyLarge
+fun SettingsScreen(
+    onNavigateBack: () -> Unit = {},
+) {
+    Scaffold(
+        topBar = {
+            SettingsTopNavigationBar(
+                title = "Render Settings",
+                onNavigateBack = onNavigateBack,
             )
-            AdvancedFontPickerDropdown()
-            }
         }
-
-        Card(
+    ) { innerPadding ->
+        Column(
             modifier = Modifier
-//                .padding(16.dp)
-                .fillMaxWidth(),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surface,
-            ),
+                .background(MaterialTheme.colorScheme.surfaceVariant)
+                .fillMaxSize()
+                .padding(innerPadding)
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Column(
+            Card(
                 modifier = Modifier
-                    .padding(16.dp)
-                    .fillMaxWidth()
+//                .padding(16.dp)
+                    .fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                ),
             ) {
-                Text(
+                Column(
                     modifier = Modifier
-                        .padding(bottom = 16.dp),
-                    text = "SVG Rendering Resolution",
-                    style = MaterialTheme.typography.bodyLarge
-                )
-                BitmapQualitySelector()
+                        .padding(16.dp)
+                        .fillMaxWidth()
+                ) {
+
+                    Text(
+                        modifier = Modifier
+                            .padding(bottom = 16.dp),
+                        text = "SVG Font Override",
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                    AdvancedFontPickerDropdown()
+                }
+            }
+
+            Card(
+                modifier = Modifier
+//                .padding(16.dp)
+                    .fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                ),
+            ) {
+                Column(
+                    modifier = Modifier
+                        .padding(16.dp)
+                        .fillMaxWidth()
+                ) {
+                    Text(
+                        modifier = Modifier
+                            .padding(bottom = 16.dp),
+                        text = "SVG Rendering Resolution",
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                    BitmapQualitySelector()
+                }
             }
         }
     }
+}
+
+@Preview(
+    widthDp = 300,
+    heightDp = 64,
+)
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun SettingsTopNavigationBar(
+    onNavigateBack: () -> Unit = {},
+    title: String = "Title"
+) {
+    TopAppBar(
+//        modifier = Modifier.windowInsetsPadding(WindowInsets.safeDrawing),
+        colors = topAppBarColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer,
+            titleContentColor = MaterialTheme.colorScheme.primary,
+        ),
+        title = {
+            Column {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleLarge,
+                    overflow = TextOverflow.Ellipsis,
+                    maxLines = 1
+                )
+            }
+        },
+        navigationIcon = {
+            IconButton(
+                modifier = Modifier.windowInsetsPadding(WindowInsets.displayCutout),
+                onClick = {
+                    onNavigateBack()
+                }
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = "Localized description"
+                )
+            }
+        }
+    )
 }
 
 @Composable

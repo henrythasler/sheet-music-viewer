@@ -1,15 +1,13 @@
 package com.henrythasler.sheetmusic
 
 import android.net.Uri
-import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -40,65 +38,60 @@ fun MusicViewerApp(
         }
 
         CompositionLocalProvider(LocalSettingsViewModel provides settingsViewModel) {
-            Scaffold(
-                topBar = {
-                    TopNavigationBar(
+            NavHost(
+                navController = navController,
+                startDestination = Screen.Home.route,
+            ) {
+                composable(route = Screen.Browser.route) {
+                    BrowserScreen(
                         onNavigateBack = { navController.popBackStack() },
-                        onNavigateToSettings = { navController.navigate(Screen.Settings.route) },
-                        navController = navController,
-                        viewModel = viewModel,
+                        onNavigateToNotation = { filename ->
+                            navController.navigate(Screen.Notation.createRoute(filename, ""))
+                        },
+                        uiState = viewModel.uiState.collectAsState().value,
+                        meiAssetsFolder = viewModel.meiAssetsFolder.collectAsState().value,
+                        readAssets = viewModel::readAssets,
                     )
                 }
-            ) { innerPadding ->
-                NavHost(
-                    navController = navController,
-                    startDestination = Screen.Home.route,
-                    modifier = Modifier.padding(innerPadding)
-                ) {
-                    composable(
-                        route = Screen.Browser.route
-                    ) {
-                        BrowserScreen(navController = navController, viewModel = viewModel)
-                    }
-                    composable(
-                        route = Screen.Notation.route,
-                        arguments = listOf(
-                            navArgument("encodedFolderPath") { type = NavType.StringType },
-                            navArgument("filename") { type = NavType.StringType }
-                        )
-                    ) { backStackEntry ->
-                        // Extract and decode the arguments
-                        val encodedFolderPath =
-                            backStackEntry.arguments?.getString("encodedFolderPath") ?: ""
-                        val encodedFilename = backStackEntry.arguments?.getString("filename") ?: ""
 
-                        // Decode the folder path
-                        val assetPath = Uri.decode(encodedFolderPath)
-                        val assetName = Uri.decode(encodedFilename)
+                composable(
+                    route = Screen.Notation.route,
+                    arguments = listOf(
+                        navArgument("encodedFolderPath") { type = NavType.StringType },
+                        navArgument("filename") { type = NavType.StringType }
+                    )
+                ) { backStackEntry ->
+                    // Extract and decode the arguments
+                    val encodedFolderPath =
+                        backStackEntry.arguments?.getString("encodedFolderPath") ?: ""
+                    val encodedFilename = backStackEntry.arguments?.getString("filename") ?: ""
 
-                        NotationScreen(
-                            navController = navController,
-                            viewModel = viewModel,
-                            assetPath = assetPath,
-                            assetName = assetName
-                        )
-                    }
-                    composable(
-                        route = Screen.Settings.route
-                    ) {
-                        SettingsScreen()
-                    }
-                    composable(
-                        route = Screen.Home.route
-                    ) {
-                        HomeScreen(
-                            onNavigateToBrowser = { navController.navigate(Screen.Browser.route) },
-                            onNavigateToNotation = { filename ->
-                                navController.navigate(Screen.Notation.createRoute(filename, ""))
-                                                   },
-                            onNavigateToSettings = { navController.navigate(Screen.Settings.route) },
-                        )
-                    }
+                    // Decode the folder path
+                    val assetPath = Uri.decode(encodedFolderPath)
+                    val assetName = Uri.decode(encodedFilename)
+
+                    NotationScreen(
+                        onNavigateBack = { navController.popBackStack() },
+                        onNavigateToSettings = { navController.navigate(Screen.Settings.route) },
+                        engraveMusicAsset = viewModel::engraveMusicAsset,
+                        assetPath = assetPath,
+                    )
+                }
+
+                composable(route = Screen.Settings.route) {
+                    SettingsScreen()
+                }
+
+                composable(route = Screen.Home.route) {
+                    HomeScreen(
+                        onNavigateBack = { navController.popBackStack() },
+                        onNavigateToBrowser = { navController.navigate(Screen.Browser.route) },
+                        onNavigateToNotation = { filename ->
+                            navController.navigate(Screen.Notation.createRoute(filename, ""))
+                                               },
+                        onNavigateToSettings = { navController.navigate(Screen.Settings.route) },
+                        verovioVersion = viewModel.verovioVersion.value,
+                    )
                 }
             }
         }

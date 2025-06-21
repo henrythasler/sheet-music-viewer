@@ -11,22 +11,16 @@ import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.outlined.Info
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults.topAppBarColors
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -67,174 +61,6 @@ sealed class Screen(val route: String) {
     data object Home : Screen("home")
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun TopNavigationBar(
-    onNavigateBack: () -> Unit,
-    onNavigateToSettings: () -> Unit,
-    navController: NavHostController,
-    viewModel: VerovioViewModel,
-) {
-    val navBackStackEntry by navController.currentBackStackEntryAsState()
-    val currentRoute = navBackStackEntry?.destination?.route
-
-    TopAppBar(
-//        modifier = Modifier.windowInsetsPadding(WindowInsets.safeDrawing),
-        colors = topAppBarColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer,
-            titleContentColor = MaterialTheme.colorScheme.primary,
-        ),
-        title = {
-            Column {
-                Text(
-                    text = "Verovio Demo",
-                    style = MaterialTheme.typography.titleLarge
-                )
-                Text(
-                    text = viewModel.verovioVersion.value?:"",
-                    style = MaterialTheme.typography.titleSmall
-                )
-            }
-        },
-        navigationIcon = {
-            IconButton(
-                modifier = Modifier.windowInsetsPadding(WindowInsets.displayCutout),
-//                enabled = currentRoute != Screen.Browser.route,
-                onClick = {
-                    onNavigateBack()
-//                    navController.navigate(Screen.Browser.route)
-                }
-            ) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Localized description"
-                )
-            }
-        },
-        actions = {
-            ActionMenu(
-                onNavigateToSettings = onNavigateToSettings,
-                enableSettingsButton = currentRoute == Screen.Notation.route
-            )
-        },
-    )
-}
-
-@Composable
-fun ActionMenu(
-    onNavigateToSettings: () -> Unit,
-    enableSettingsButton: Boolean = true,
-) {
-    var expanded by remember { mutableStateOf(false) }
-    val openAlertDialog = remember { mutableStateOf(false) }
-
-    Row {
-        if(enableSettingsButton) {
-            IconButton(
-                modifier = Modifier
-                    .windowInsetsPadding(WindowInsets.displayCutout),
-//                enabled = currentRoute != Screen.Browser.route,
-                onClick = {
-                    onNavigateToSettings()
-                }
-            ) {
-                Icon(
-                    painter = painterResource(R.drawable.baseline_settings_24),
-                    contentDescription = null
-                )
-            }
-        }
-
-        IconButton(onClick = { expanded = !expanded }) {
-            Icon(Icons.Default.MoreVert, contentDescription = "More options")
-        }
-        DropdownMenu(
-            expanded = expanded,
-            onDismissRequest = { expanded = false }
-        ) {
-//        DropdownMenuItem(
-//            text = { Text("Settings") },
-//            leadingIcon = { Icon(painter = painterResource(R.drawable.baseline_settings_24), contentDescription = null) },
-//            onClick = {
-//                expanded = false
-//                onNavigateToSettings()
-//            }
-//        )
-//
-//        HorizontalDivider()
-
-            DropdownMenuItem(
-                text = { Text("About") },
-                leadingIcon = { Icon(Icons.Outlined.Info, contentDescription = null) },
-                onClick = {
-                    expanded = false
-                    openAlertDialog.value = true
-                }
-            )
-        }
-    }
-
-    when {
-        // ...
-        openAlertDialog.value -> {
-            AlertDialog(
-                icon = {
-                    Icon(
-                        painter = painterResource(R.drawable.verovio_logo_big),
-                        contentDescription = "Example Icon"
-                    )
-                },
-                title = {
-                    Text(text = "Verovio Demo")
-                },
-                text = {
-                    Column {
-                        Text("by Henry Thasler")
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        val verovioLink = buildAnnotatedString {
-                            append("See ")
-                            pushStringAnnotation(tag = "URL", annotation = "https://www.verovio.org")
-                            withStyle(style = SpanStyle(textDecoration = TextDecoration.Underline, color = MaterialTheme.colorScheme.primary)) {
-                                append("www.verovio.org")
-                            }
-                            pop()
-                        }
-                        val context = LocalContext.current
-                        Text(
-                            text = verovioLink,
-                            style = MaterialTheme.typography.bodyMedium,
-                            modifier = Modifier
-                                .clickable {
-                                    val annotation = verovioLink.getStringAnnotations("URL", 0, verovioLink.length)
-                                        .firstOrNull()
-                                    annotation?.let {
-                                        val intent = Intent(
-                                            Intent.ACTION_VIEW,
-                                            it.item.toUri()
-                                        )
-                                        context.startActivity(intent)
-                                    }
-                                }
-                        )
-                    }
-                },
-                onDismissRequest = {
-                    openAlertDialog.value = false
-                },
-                confirmButton = {
-                    TextButton(
-                        onClick = {
-                            openAlertDialog.value = false
-                        }
-                    ) {
-                        Text("OK")
-                    }
-                },
-            )
-        }
-    }
-}
 
 @Composable
 fun BottomNavigationBar(navController: NavHostController, items: List<NavigationItem>) {

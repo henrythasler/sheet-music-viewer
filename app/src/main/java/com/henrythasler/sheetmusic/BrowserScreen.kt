@@ -8,43 +8,54 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CardElevation
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults.topAppBarColors
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.navigation.NavHostController
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -133,102 +144,174 @@ sealed class AssetUiState {
 
 @Composable
 fun BrowserScreen(
-    navController: NavHostController,
-    viewModel: VerovioViewModel,
+    onNavigateBack: () -> Unit = {},
+    onNavigateToNotation: (fileName: String) -> Unit = {},
+    meiAssetsFolder: String? = null,
+    uiState: AssetUiState,
+    readAssets: suspend(context: Context, newFolder: String?) -> Unit
 ) {
     val context = LocalContext.current
-    val uiState by viewModel.uiState.collectAsState()
     val coroutineScope = rememberCoroutineScope()
-    val meiAssetsFolder by viewModel.meiAssetsFolder.collectAsState()
 
     // Load assets when composable is first launched
     LaunchedEffect(meiAssetsFolder) {
-        viewModel.readAssets(context)
+        readAssets(context, meiAssetsFolder)
     }
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-    ) {
-        when (uiState) {
-            is AssetUiState.Loading -> {
-                CircularProgressIndicator(
-                    modifier = Modifier.align(Alignment.Center)
-                )
-            }
+    Scaffold(
+        topBar = {
+            BrowserTopNavigationBar(
+                onNavigateBack = onNavigateBack,
+            )
+        }
+    ) { innerPadding ->
 
-            is AssetUiState.Empty -> {
-                Column(
-                    modifier = Modifier.align(Alignment.Center),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Info,
-                        contentDescription = null,
-                        modifier = Modifier.size(64.dp)
+        Box(
+            modifier = Modifier
+                .padding(innerPadding)
+                .fillMaxSize()
+        ) {
+            when (uiState) {
+                is AssetUiState.Loading -> {
+                    CircularProgressIndicator(
+                        modifier = Modifier.align(Alignment.Center)
                     )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text("No files found in this assets folder")
                 }
-            }
 
-            is AssetUiState.Success -> {
-                val assets = (uiState as AssetUiState.Success).assets
-                LazyVerticalGrid(
-                    columns = GridCells.Adaptive(minSize = 96.dp),
-                    contentPadding = PaddingValues(8.dp)
-                ) {
-                    items(assets) { assetItem ->
-                        AssetGridItem(
-                            assetItem = assetItem,
-                            onClick = {
-                                // Handle asset click
-                                val message = "Selected: ${assetItem.name} (${assetItem.path})"
-                                Log.d("AssetsGridScreen", message)
-
-                                if (assetItem.isDirectory) {
-                                    coroutineScope.launch {
-                                        viewModel.readAssets(context, assetItem.path)
-                                    }
-                                } else {
-                                    navController.navigate(
-                                        Screen.Notation.createRoute(assetItem.path, assetItem.name)
-                                    )
-                                }
-
-                                // Here you can handle the asset click event
-                                // Open the asset, navigate to the folder, etc.
-                            }
+                is AssetUiState.Empty -> {
+                    Column(
+                        modifier = Modifier.align(Alignment.Center),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Info,
+                            contentDescription = null,
+                            modifier = Modifier.size(64.dp)
                         )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text("No files found in this assets folder")
                     }
                 }
-            }
 
-            is AssetUiState.Error -> {
-                val errorMessage = (uiState as AssetUiState.Error).message
-                Column(
-                    modifier = Modifier.align(Alignment.Center),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Info,
-                        contentDescription = null,
-                        modifier = Modifier.size(64.dp),
-                        tint = Color.Red
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text(
-                        text = errorMessage,
-                        color = Color.Red,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.padding(16.dp)
-                    )
+                is AssetUiState.Success -> {
+                    val assets = uiState.assets
+                    LazyVerticalGrid(
+                        columns = GridCells.Adaptive(minSize = 96.dp),
+                        contentPadding = PaddingValues(8.dp)
+                    ) {
+                        items(assets) { assetItem ->
+                            AssetGridItem(
+                                assetItem = assetItem,
+                                onClick = {
+                                    // Handle asset click
+                                    val message = "Selected: ${assetItem.name} (${assetItem.path})"
+                                    Log.d("AssetsGridScreen", message)
+
+                                    if (assetItem.isDirectory) {
+                                        coroutineScope.launch {
+                                            readAssets(context, assetItem.path)
+                                        }
+                                    } else {
+                                        onNavigateToNotation(assetItem.path)
+                                    }
+
+                                    // Here you can handle the asset click event
+                                    // Open the asset, navigate to the folder, etc.
+                                }
+                            )
+                        }
+                    }
+                }
+
+                is AssetUiState.Error -> {
+                    val errorMessage = (uiState as AssetUiState.Error).message
+                    Column(
+                        modifier = Modifier.align(Alignment.Center),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Info,
+                            contentDescription = null,
+                            modifier = Modifier.size(64.dp),
+                            tint = Color.Red
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            text = errorMessage,
+                            color = Color.Red,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.padding(16.dp)
+                        )
+                    }
                 }
             }
         }
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun BrowserTopNavigationBar(
+    onNavigateBack: () -> Unit,
+) {
+    TopAppBar(
+        colors = topAppBarColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer,
+            titleContentColor = MaterialTheme.colorScheme.primary,
+        ),
+        title = {
+            Column {
+                Text(
+                    text = "Verovio Demo",
+                    style = MaterialTheme.typography.titleLarge
+                )
+            }
+        },
+        navigationIcon = {
+            IconButton(
+                modifier = Modifier.windowInsetsPadding(WindowInsets.displayCutout),
+                onClick = {
+                    onNavigateBack()
+                }
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = "Localized description"
+                )
+            }
+        },
+        actions = {
+            BrowserActionMenu()
+        },
+    )
+}
+
+@Composable
+fun BrowserActionMenu() {
+    var expanded by remember { mutableStateOf(false) }
+    val openAlertDialog = remember { mutableStateOf(false) }
+
+    IconButton(onClick = { expanded = !expanded }) {
+        Icon(Icons.Default.MoreVert, contentDescription = "More options")
+    }
+    DropdownMenu(
+        expanded = expanded,
+        onDismissRequest = { expanded = false }
+    ) {
+        DropdownMenuItem(
+            text = { Text("About") },
+            leadingIcon = { Icon(Icons.Outlined.Info, contentDescription = null) },
+            onClick = {
+                expanded = false
+                openAlertDialog.value = true
+            }
+        )
+    }
+
+    if (openAlertDialog.value) {
+        AboutDialog(openAlertDialog)
+    }
+}
 
 @Composable
 fun SquareCard(

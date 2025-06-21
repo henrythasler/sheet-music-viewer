@@ -19,8 +19,8 @@ import java.io.IOException
 import kotlin.system.measureTimeMillis
 
 class VerovioViewModel : ViewModel() {
-    private val _svgData = MutableStateFlow("")
-    val svgData = _svgData.asStateFlow()
+//    private val _svgData = MutableStateFlow("")
+//    val svgData = _svgData.asStateFlow()
 
     private val _verovioVersion = mutableStateOf<String?>(null)
     val verovioVersion: State<String?>
@@ -57,31 +57,33 @@ class VerovioViewModel : ViewModel() {
         }
     }
 
-    fun renderAsset(context: Context, assetPath: String) {
-        viewModelScope.launch {
-            val timeMillis = measureTimeMillis {
-                try {
-                    val encodedMusic = context.assets.open(assetPath).bufferedReader().use { it.readText() }
-                    _svgData.value = renderData(encodedMusic)
-                } catch (e: Exception) {
-                    "Failed to load asset: ${e.localizedMessage}"
-                } 
-            }
+//    fun renderAsset(context: Context, assetPath: String) {
+//        viewModelScope.launch {
+//            val timeMillis = measureTimeMillis {
+//                try {
+//                    val encodedMusic = context.assets.open(assetPath).bufferedReader().use { it.readText() }
+//                    _svgData.value = renderData(encodedMusic)
+//                } catch (e: Exception) {
+//                    "Failed to load asset: ${e.localizedMessage}"
+//                }
+//            }
+//
+//            Log.i("Verovio", "Engraving '$assetPath' took $timeMillis ms. (${_svgData.value.length} Bytes)")
+//        }
+//    }
 
-            Log.i("Verovio", "Engraving '$assetPath' took $timeMillis ms. (${_svgData.value.length} Bytes)")
-        }
-    }
-
-    suspend fun engraveMusicAsset(context: Context, assetPath: String): String = withContext(
+    suspend fun engraveMusicAsset(context: Context, assetPath: String): String? = withContext(
         Dispatchers.IO) {
         try {
             val encodedMusic = context.assets.open(assetPath).bufferedReader().use { it.readText() }
-            _svgData.value = renderData(encodedMusic)
+            val svgData = renderData(encodedMusic)
+            if(svgData.isNotEmpty()) {
+                return@withContext svgData
+            }
         } catch (e: Exception) {
             "Failed to load asset: ${e.localizedMessage}"
-            _svgData.value = ""
         }
-        return@withContext _svgData.value
+        return@withContext null
     }
 
     // Function to extract and load asset
