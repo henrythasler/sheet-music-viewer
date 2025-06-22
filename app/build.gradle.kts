@@ -8,9 +8,10 @@ plugins {
 }
 
 fun getCommitHash(): String {
-    val process = Runtime.getRuntime().exec("git rev-parse --short HEAD")
     return try {
-        process.inputStream.bufferedReader().readText().trim()
+        providers.exec {
+            commandLine("git", "rev-parse", "--short", "HEAD")
+        }.standardOutput.asText.get().trim()
     } catch (e: Exception) {
         "unknown"
     }
@@ -18,9 +19,10 @@ fun getCommitHash(): String {
 
 // Function to check if working directory is clean
 fun isGitClean(): Boolean {
-    val process = Runtime.getRuntime().exec("git status --porcelain")
     return try {
-        process.inputStream.bufferedReader().readText().isEmpty()
+        providers.exec {
+            commandLine("git", "status", "--porcelain")
+        }.standardOutput.asText.get().isEmpty()
     } catch (e: Exception) {
         false
     }
@@ -29,8 +31,9 @@ fun isGitClean(): Boolean {
 // Function to get current branch name
 fun getGitBranch(): String {
     return try {
-        val process = Runtime.getRuntime().exec("git rev-parse --abbrev-ref HEAD")
-        process.inputStream.bufferedReader().readText().trim()
+        providers.exec {
+            commandLine("git", "rev-parse", "--abbrev-ref", "HEAD")
+        }.standardOutput.asText.get().trim()
     } catch (e: Exception) {
         "unknown"
     }
