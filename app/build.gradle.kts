@@ -1,7 +1,39 @@
+import java.text.SimpleDateFormat
+import java.util.Date
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.jetbrains.kotlin.android)
     alias(libs.plugins.compose.compiler)
+}
+
+fun getCommitHash(): String {
+    val process = Runtime.getRuntime().exec("git rev-parse --short HEAD")
+    return try {
+        process.inputStream.bufferedReader().readText().trim()
+    } catch (e: Exception) {
+        "unknown"
+    }
+}
+
+// Function to check if working directory is clean
+fun isGitClean(): Boolean {
+    val process = Runtime.getRuntime().exec("git status --porcelain")
+    return try {
+        process.inputStream.bufferedReader().readText().isEmpty()
+    } catch (e: Exception) {
+        false
+    }
+}
+
+// Function to get current branch name
+fun getGitBranch(): String {
+    return try {
+        val process = Runtime.getRuntime().exec("git rev-parse --abbrev-ref HEAD")
+        process.inputStream.bufferedReader().readText().trim()
+    } catch (e: Exception) {
+        "unknown"
+    }
 }
 
 android {
@@ -13,7 +45,16 @@ android {
         minSdk = 26
         targetSdk = 35
         versionCode = 1
-        versionName = "1.0"
+        val versionMinor = 0
+        val versionPatch = 0
+        versionName = "$versionCode.$versionMinor.$versionPatch"
+
+        // Make version info available in BuildConfig
+        buildConfigField("String", "BRANCH_NAME", "\"${getGitBranch()}\"")
+        buildConfigField("String", "COMMIT_HASH", "\"${getCommitHash()}\"")
+        buildConfigField("boolean", "GIT_LOCAL_CHANGES", "${!isGitClean()}")
+        buildConfigField("String", "VERSION_NAME", "\"$versionName\"")
+        buildConfigField("String", "BUILD_DATE", "\"${SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(Date())}\"")
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         externalNativeBuild {
@@ -80,7 +121,7 @@ android {
         }
 
         debug {
-            applicationIdSuffix = ".debug"
+//            applicationIdSuffix = ".debug"
             isDebuggable = true
         }
     }
@@ -98,6 +139,7 @@ android {
         }
     }
     buildFeatures {
+        buildConfig = true
         viewBinding = true
         compose = true
     }

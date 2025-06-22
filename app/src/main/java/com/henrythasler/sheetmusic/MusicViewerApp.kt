@@ -8,6 +8,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.remember
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -46,7 +47,7 @@ fun MusicViewerApp(
                     BrowserScreen(
                         onNavigateBack = { navController.popBackStack() },
                         onNavigateToNotation = { filename ->
-                            navController.navigate(Screen.Notation.createRoute(filename, ""))
+                            navController.navigate(Screen.Notation.createRoute(filename, 1.0f, Offset.Zero))
                         },
                         uiState = viewModel.uiState.collectAsState().value,
                         meiAssetsFolder = viewModel.meiAssetsFolder.collectAsState().value,
@@ -57,29 +58,38 @@ fun MusicViewerApp(
                 composable(
                     route = Screen.Notation.route,
                     arguments = listOf(
-                        navArgument("encodedFolderPath") { type = NavType.StringType },
-                        navArgument("filename") { type = NavType.StringType }
+                        navArgument("encodedAssetPath") { type = NavType.StringType },
+                        navArgument("scale") { type = NavType.FloatType },
+                        navArgument("x") { type = NavType.FloatType },
+                        navArgument("y") { type = NavType.FloatType },
+                        navArgument("encodedTag") { type = NavType.StringType },
                     )
                 ) { backStackEntry ->
                     // Extract and decode the arguments
-                    val encodedFolderPath =
-                        backStackEntry.arguments?.getString("encodedFolderPath") ?: ""
-                    val encodedFilename = backStackEntry.arguments?.getString("filename") ?: ""
+                    val encodedAssetPath = backStackEntry.arguments?.getString("encodedAssetPath") ?: ""
+                    val scale = backStackEntry.arguments?.getFloat("scale", 1.0f) ?: 1.0f
+                    val offsetX = backStackEntry.arguments?.getFloat("x", 0.0f) ?: 0.0f
+                    val offsetY = backStackEntry.arguments?.getFloat("y", 0.0f) ?: 0.0f
+                    val encodedTag = backStackEntry.arguments?.getString("encodedTag") ?: ""
 
                     // Decode the folder path
-                    val assetPath = Uri.decode(encodedFolderPath)
-                    val assetName = Uri.decode(encodedFilename)
+                    val assetPath = Uri.decode(encodedAssetPath)
+                    val tag = Uri.decode(encodedTag)
 
                     NotationScreen(
                         onNavigateBack = { navController.popBackStack() },
                         onNavigateToSettings = { navController.navigate(Screen.Settings.route) },
                         engraveMusicAsset = viewModel::engraveMusicAsset,
                         assetPath = assetPath,
+                        initialScale = scale,
+                        initialOffset = Offset(offsetX, offsetY)
                     )
                 }
 
                 composable(route = Screen.Settings.route) {
-                    SettingsScreen()
+                    SettingsScreen(
+                        onNavigateBack = { navController.popBackStack() },
+                    )
                 }
 
                 composable(route = Screen.Home.route) {
@@ -87,7 +97,7 @@ fun MusicViewerApp(
                         onNavigateBack = { navController.popBackStack() },
                         onNavigateToBrowser = { navController.navigate(Screen.Browser.route) },
                         onNavigateToNotation = { filename ->
-                            navController.navigate(Screen.Notation.createRoute(filename, ""))
+                            navController.navigate(Screen.Notation.createRoute(filename, 1.0f, Offset.Zero))
                                                },
                         onNavigateToSettings = { navController.navigate(Screen.Settings.route) },
                         verovioVersion = viewModel.verovioVersion.value,

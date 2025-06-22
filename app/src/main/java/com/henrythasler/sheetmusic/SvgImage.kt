@@ -55,6 +55,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.nio.file.Paths
+import kotlin.math.nextTowards
 import kotlin.system.measureTimeMillis
 
 /**
@@ -266,6 +267,8 @@ fun ScalableCachedSvgImage(
     modifier: Modifier = Modifier,
     canvasConfig: CanvasConfig = CanvasConfig(),
     svgConfig: SvgConfig = SvgConfig(),
+    initialScale: Float = 1.0f,
+    initialOffset: Offset = Offset.Zero,
 ) {
     val context = LocalContext.current
     val coroutineScope = remember { CoroutineScope(Dispatchers.Main) }
@@ -275,11 +278,11 @@ fun ScalableCachedSvgImage(
     var viewportSize by remember { mutableStateOf(Size.Zero) }
 
     // State for transformations
-    var offset by remember { mutableStateOf(Offset.Zero) }
-    var scale by remember { mutableFloatStateOf(1f) }
+    var offset by remember { mutableStateOf(initialOffset) }
+    var scale by remember { mutableFloatStateOf(initialScale) }
 
-    var renderOffset by remember { mutableStateOf(Offset.Zero) }
-    var renderScale by remember { mutableFloatStateOf(1f) }
+    var renderOffset by remember { mutableStateOf(initialOffset) }
+    var renderScale by remember { mutableFloatStateOf(initialScale) }
 
     var overviewOffset by remember { mutableStateOf(Offset.Zero) }
     var overviewScale by remember { mutableFloatStateOf(1f) }
@@ -308,6 +311,7 @@ fun ScalableCachedSvgImage(
         renderJob = coroutineScope.launch {
             delay(canvasConfig.debounceDelayMs)
 
+            // measuring render time for benchmarking
             renderTime = measureTimeMillis {
                 currentBitmap = imageBitmapFromSvgAtScale(
                     svgString = svgDocument,
@@ -320,7 +324,20 @@ fun ScalableCachedSvgImage(
                     fontResolver = fastFontResolver
                 )
                 if(overviewBitmap == null) {
-                    overviewBitmap = currentBitmap
+                    overviewBitmap = if (renderScale.equals(1.0f) && renderOffset == Offset.Zero) {
+                        currentBitmap
+                    } else {
+                        imageBitmapFromSvgAtScale(
+                            svgString = svgDocument,
+                            canvasSize = canvasSize,
+                            offset = Offset.Zero,
+                            scale = 1.0f,
+                            bitmapScale = bitmapScale,
+                            svgConfig = svgConfig,
+                            canvasConfig = canvasConfig,
+                            fontResolver = fastFontResolver
+                        )
+                    }
                 }
             }
 
@@ -393,8 +410,8 @@ fun ScalableCachedSvgImage(
                     // Update scale and offset
                     scale = newScale
                     offset = Offset(
-                        (newOffset.x + pan.x), //.coerceIn(-maxPanX, maxPanX),
-                        (newOffset.y + pan.y)  //.coerceIn(-maxPanY, maxPanY)
+                        (newOffset.x + pan.x),//.coerceIn(-maxPanX, maxPanX),
+                        (newOffset.y + pan.y)//.coerceIn(-maxPanY, maxPanY)
                     )
 
                     // Calculate render values

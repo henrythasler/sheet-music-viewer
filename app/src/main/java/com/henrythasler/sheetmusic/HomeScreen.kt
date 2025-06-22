@@ -1,6 +1,5 @@
 package com.henrythasler.sheetmusic
 
-import androidx.annotation.DrawableRes
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -44,6 +43,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
@@ -77,8 +77,8 @@ fun HomeScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding)
-                .padding(16.dp),
+                .padding(innerPadding),
+//                .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Spacer(modifier = Modifier.height(50.dp))
@@ -110,7 +110,7 @@ fun HomeScreen(
             )
             Spacer(modifier = Modifier.height(8.dp))
             FavouritesRow(onNavigateToNotation)
-//        CarouselExample()
+//            FavouritesCarousel()
 
             Spacer(modifier = Modifier.height(16.dp))
             Button(onClick = { onNavigateToBrowser() }) {
@@ -148,13 +148,15 @@ fun HomeTopNavigationBar(
             }
         },
         actions = {
-            HomeActionMenu()
+            HomeActionMenu(verovioVersion)
         },
     )
 }
 
 @Composable
-fun HomeActionMenu() {
+fun HomeActionMenu(
+    verovioVersion: String? = null,
+) {
     var expanded by remember { mutableStateOf(false) }
     val openAlertDialog = remember { mutableStateOf(false) }
 
@@ -176,7 +178,7 @@ fun HomeActionMenu() {
     }
 
     if (openAlertDialog.value) {
-        AboutDialog(openAlertDialog)
+        AboutDialog(openAlertDialog, verovioVersion)
     }
 }
 
@@ -200,6 +202,7 @@ fun FavouritesRow(
     }
 
     LazyRow(
+        contentPadding = PaddingValues(6.dp),
         horizontalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         favourites.forEach { item ->
@@ -208,6 +211,7 @@ fun FavouritesRow(
                     modifier = Modifier
                         .fillMaxWidth()
                         .size(128.dp)
+                        .shadow(4.dp)
                         .background(Color.White)
                         .clickable {
                             onNavigateToNotation(item.path)
@@ -224,7 +228,7 @@ fun FavouritesRow(
                     Text(
                         modifier = Modifier
                             .align(Alignment.BottomCenter),
-                        text = item.name,
+                        text = item.name.substringBeforeLast("."),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -237,25 +241,24 @@ fun FavouritesRow(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CarouselExample() {
-    data class CarouselItem(
-        val id: Int,
-        @DrawableRes val imageResId: Int,
-        val contentDescription: String
+fun FavouritesCarousel() {
+    data class MeiItem(
+        val path: String,
+        val name: String
     )
 
-    val carouselItems = remember {
+    val favourites = remember {
         listOf(
-            CarouselItem(0, R.drawable.baseline_image_search_24, "cupcake"),
-            CarouselItem(1, R.drawable.outline_folder_24, "donut"),
-            CarouselItem(2, R.drawable.verovio_logo_big, "eclair"),
-            CarouselItem(3, R.drawable.mei_logo_simple_light, "froyo"),
-            CarouselItem(4, R.drawable.baseline_arrow_back_ios_24, "gingerbread"),
+            MeiItem("mei/tempo/tempo-003.mei", "tempo-003.mei"),
+            MeiItem("mei/chord/chord-005.mei", "chord-005.mei"),
+            MeiItem("mei/lyric/lyric-004.mei", "lyric-004.mei"),
+            MeiItem("mei/arpeg/arpeg-001.mei", "arpeg-001.mei"),
+            MeiItem("mei/Costeley_Je_vois_de_glissantes_eaux.mei", "Costeley_Je_vois_de_glissantes_eaux.mei"),
         )
     }
 
     HorizontalUncontainedCarousel (
-        state = rememberCarouselState { carouselItems.count() },
+        state = rememberCarouselState { favourites.count() },
         modifier = Modifier
             .fillMaxWidth(0.95f)
             .wrapContentHeight()
@@ -264,14 +267,19 @@ fun CarouselExample() {
         itemSpacing = 8.dp,
         contentPadding = PaddingValues(horizontal = 16.dp)
     ) { i ->
-        val item = carouselItems[i]
+        val item = favourites[i]
         Image(
             modifier = Modifier
                 .height(205.dp)
                 .maskClip(MaterialTheme.shapes.extraLarge),
-            painter = painterResource(id = item.imageResId),
-            contentDescription = item.contentDescription,
+            painter = painterResource(id = R.drawable.mei_logo_simple_light),
+            contentDescription = item.name,
             contentScale = ContentScale.Crop
+        )
+        Text(
+            text = item.name.substringBeforeLast("."),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
         )
     }
 }
