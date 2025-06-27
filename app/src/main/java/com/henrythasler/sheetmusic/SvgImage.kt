@@ -55,7 +55,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.nio.file.Paths
-import kotlin.math.nextTowards
 import kotlin.system.measureTimeMillis
 
 /**
@@ -179,6 +178,7 @@ suspend fun imageBitmapFromSvgAtScale(
         // use custom font for all text items
         SVG.registerExternalFileResolver(fontResolver);
         svgConfig.customFont?.let { font ->
+            Log.d("SVG", "Using custom font: '$font'")
             customCss.add("text { font-family: $font; }")
         }
 

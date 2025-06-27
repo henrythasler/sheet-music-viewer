@@ -38,8 +38,8 @@ class SettingsRepository(private val context: Context) {
         val SVG_RENDER_RESOLUTION = stringPreferencesKey("HIGH")
     }
 
-    val svgOverrideFont: Flow<String> = context.dataStore.data.map { preferences ->
-        preferences[SVG_OVERRIDE_FONT] ?: ""
+    val svgOverrideFont: Flow<String?> = context.dataStore.data.map { preferences ->
+        preferences[SVG_OVERRIDE_FONT]
     }
     suspend fun setSvgOverrideFont(name: String) {
         context.dataStore.edit { preferences ->

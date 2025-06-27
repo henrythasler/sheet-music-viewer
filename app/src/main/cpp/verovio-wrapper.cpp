@@ -69,3 +69,19 @@ Java_com_henrythasler_sheetmusic_VerovioViewModel_renderData(JNIEnv *env, jobjec
     env->ReleaseStringUTFChars(data, mei_data);
     return env->NewStringUTF(svg_data.c_str());
 }
+
+extern "C" JNIEXPORT jstring JNICALL
+Java_com_henrythasler_sheetmusic_VerovioViewModel_renderToTimemap(JNIEnv *env, jobject thiz, jstring data) {
+    const char* mei_data = env->GetStringUTFChars(data, nullptr);
+
+    if(tk.SetOptions(R"({
+        "breaks": "none",
+}
+)")) {
+        tk.LoadData(mei_data);
+        std::string time_map = tk.RenderToTimemap("");
+        env->ReleaseStringUTFChars(data, mei_data);
+        return env->NewStringUTF(time_map.c_str());
+    }
+    return env->NewStringUTF("");
+}

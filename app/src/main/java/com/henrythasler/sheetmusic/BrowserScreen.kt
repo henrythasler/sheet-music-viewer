@@ -239,6 +239,7 @@ fun BrowserScreen(
                         Text(
                             text = errorMessage,
                             color = Color.Red,
+                            style = MaterialTheme.typography.headlineMedium,
                             textAlign = TextAlign.Center,
                             modifier = Modifier.padding(16.dp)
                         )

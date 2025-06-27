@@ -4,7 +4,6 @@ import android.content.Context
 import android.util.Log
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.ui.graphics.ImageBitmap
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
@@ -16,7 +15,6 @@ import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
-import kotlin.system.measureTimeMillis
 
 class VerovioViewModel : ViewModel() {
 //    private val _svgData = MutableStateFlow("")
@@ -162,5 +160,6 @@ class VerovioViewModel : ViewModel() {
     }
     private external fun getVersion(): String
     private external fun renderData(data: String): String
+    private external fun renderToTimemap(data: String): String
     private external fun setDataPath(path: String)
 }

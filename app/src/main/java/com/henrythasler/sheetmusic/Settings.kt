@@ -17,7 +17,6 @@ import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Card
-import androidx.compose.material3.CardColors
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -43,7 +42,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.platform.LocalContext
@@ -299,7 +297,7 @@ fun createFontFamilyFromAssets(fontPath: String): FontFamily {
 fun AdvancedFontPickerDropdown() {
     // Define your custom font families
     val customFonts = mapOf(
-        "off" to FontFamily.Serif,
+        "off (use system font)" to FontFamily.Serif,
         "Edwin-Roman" to createFontFamilyFromAssets("fonts/Edwin-Roman.otf"),
         "Edwin-Italic" to createFontFamilyFromAssets("fonts/Edwin-Italic.otf"),
         "OpenSans-Light" to createFontFamilyFromAssets("fonts/OpenSans-Light.ttf"),
@@ -316,7 +314,7 @@ fun AdvancedFontPickerDropdown() {
         onExpandedChange = { expanded = it }
     ) {
         OutlinedTextField(
-            value = selectedFontName,
+            value = selectedFontName?: customFonts.keys.first(),
             onValueChange = { },
             readOnly = true,
 //            label = { Text("Select Font") },
@@ -326,7 +324,7 @@ fun AdvancedFontPickerDropdown() {
             leadingIcon = {
                 Icon(
                     painter = rememberCanvasTextPainter(
-                        text = "Aa",
+                        text = "Ag",
                         size = 48.dp,
                         fontFamily = customFonts[selectedFontName],
                         color = MaterialTheme.colorScheme.secondary
@@ -367,7 +365,7 @@ fun AdvancedFontPickerDropdown() {
                     leadingIcon = {
                         Icon(
                             painter = rememberCanvasTextPainter(
-                                text = "Aa",
+                                text = "Ag",
                                 size = 48.dp,
                                 fontFamily = fontFamily,
                                 color = MaterialTheme.colorScheme.secondary
