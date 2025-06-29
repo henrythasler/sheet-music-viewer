@@ -4,9 +4,25 @@ Show [MEI](https://music-encoding.org/about/)- or MusicXML-Files rendered with [
 
 This app is currently a tech-demo to show how music engraving via Verovio can be integrated into an Android app.
 
-1|2|3
----|---|---
-![](docs/demo1.png)|![](docs/demo2.png)|![](docs/demo3.png)
+## Feature Overview
+
+- Render and show .mei files using latest Verovio
+- Example browser with 600+ demo files from Verovio Test Suite
+- Choose custom fonts for lyrics/text
+- SVG-Export
+
+Home screen with short info about Verovio and some quick-access examples.
+
+![](docs/home-screen-tablet.png)
+
+Detailled notation view including fast zooming and panning.
+
+![](docs/notation-view-zoom-tablet.png)
+
+Override default fonts
+
+![](docs/font-override-demo-phone.png)
+
 
 ## Download and Installation
 
@@ -37,6 +53,8 @@ see [latest release](https://github.com/henrythasler/verovio-demo-app/releases/l
 - In App `build.gradle.kts`: Cmake requires additional `cppFlags += "-llog"` to avoid linker errors for Android log output which in turn generates a ton of warnings during the compile step.
 
 ## Resources
+
+Parts of the source code were created using GenAI.
 
 ### UI, Graphics
 
