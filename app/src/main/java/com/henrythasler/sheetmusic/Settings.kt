@@ -295,26 +295,21 @@ fun createFontFamilyFromAssets(fontPath: String): FontFamily {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AdvancedFontPickerDropdown() {
-    // Define your custom font families
-    val customFonts = mapOf(
-        "off (use system font)" to FontFamily.Serif,
-        "Edwin-Roman" to createFontFamilyFromAssets("fonts/Edwin-Roman.otf"),
-        "Edwin-Italic" to createFontFamilyFromAssets("fonts/Edwin-Italic.otf"),
-        "OpenSans-Light" to createFontFamilyFromAssets("fonts/OpenSans-Light.ttf"),
-        "OpenSans-CondLight" to createFontFamilyFromAssets("fonts/OpenSans-CondLight.ttf"),
-    )
 
     var expanded by remember { mutableStateOf(false) }
 
     val settings = useSettings()
-    val selectedFontName by settings.svgOverrideFont.collectAsState(initial = customFonts.keys.first())
+    val selectedCustomFont = settings.svgOverrideFont.collectAsState(initial = SvgCustomFonts.keys.first()).value
+    val customFont: CustomFont = remember(selectedCustomFont) {
+        SvgCustomFonts[selectedCustomFont] ?: SvgCustomFonts.values.first()
+    }
 
     ExposedDropdownMenuBox(
         expanded = expanded,
         onExpandedChange = { expanded = it }
     ) {
         OutlinedTextField(
-            value = selectedFontName?: customFonts.keys.first(),
+            value = customFont.description,
             onValueChange = { },
             readOnly = true,
 //            label = { Text("Select Font") },
@@ -326,7 +321,7 @@ fun AdvancedFontPickerDropdown() {
                     painter = rememberCanvasTextPainter(
                         text = "Ag",
                         size = 48.dp,
-                        fontFamily = customFonts[selectedFontName],
+                        fontFamily = customFont.fontFamily ?: FontFamily.Serif,
                         color = MaterialTheme.colorScheme.secondary
                     ),
                     contentDescription = "Font preview",
@@ -346,17 +341,17 @@ fun AdvancedFontPickerDropdown() {
             expanded = expanded,
             onDismissRequest = { expanded = false }
         ) {
-            customFonts.forEach { (fontName, fontFamily) ->
+            SvgCustomFonts.forEach { (key, customFont) ->
                 DropdownMenuItem(
                     text = {
                         Column {
                             Text(
-                                text = fontName,
+                                text = customFont.description,
                                 style = MaterialTheme.typography.bodyLarge
                             )
                             Text(
                                 text = "The quick brown fox jumps",
-                                fontFamily = fontFamily,
+                                fontFamily = customFont.fontFamily ?: FontFamily.Serif,
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -367,7 +362,7 @@ fun AdvancedFontPickerDropdown() {
                             painter = rememberCanvasTextPainter(
                                 text = "Ag",
                                 size = 48.dp,
-                                fontFamily = fontFamily,
+                                fontFamily = customFont.fontFamily ?: FontFamily.Serif,
                                 color = MaterialTheme.colorScheme.secondary
                             ),
                             contentDescription = "Font preview",
@@ -375,7 +370,7 @@ fun AdvancedFontPickerDropdown() {
                         )
                     },
                     onClick = {
-                        settings.updateSvgOverrideFont(fontName)
+                        settings.updateSvgOverrideFont(key)
                         expanded = false
                     },
                     contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding

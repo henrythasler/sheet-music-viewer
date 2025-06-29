@@ -40,6 +40,11 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFontFamilyResolver
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toSize
 import androidx.core.graphics.createBitmap
@@ -73,7 +78,7 @@ data class CanvasConfig(
 
 data class SvgConfig(
     val tintColor: Color? = null,
-    val customFont: String? = null,
+    val customFont: CustomFont? = null,
 )
 
 
@@ -81,23 +86,40 @@ data class SvgConfig(
  * Custom resolver for AndroidSVG to resolve fonts that must be loaded from assets.
  * Caches loaded fonts to improve performance
  */
-class FastFontResolver(context: Context, assetFolder: String = "") : SVGExternalFileResolver() {
+class FastFontResolver(
+    context: Context,
+    assetFolder: String = "",
+    fontFamilyResolver: FontFamily.Resolver,
+) : SVGExternalFileResolver() {
     // Member Variables
     private val _context: Context = context
     private val _folder: String = assetFolder
+    private val _fontFamilyResolver: FontFamily.Resolver = fontFamilyResolver
     private val fontCache = mutableMapOf<String, Typeface>()
 
+    private fun generateKey(fontFamily: String, fontWeight: Int, fontStyle: String): String {
+        return "$fontFamily-$fontWeight-$fontStyle"
+    }
+
+    private fun isItalic(fontStyle: String): Boolean {
+        return(fontStyle == "Italic")
+    }
+
     override fun resolveFont(fontFamily: String, fontWeight: Int, fontStyle: String): Typeface? {
-        if (this.fontCache.containsKey(fontFamily)) {
-//            Log.d("FastFontResolver", "cache hit for $fontFamily ($fontWeight, $fontStyle)")
-            return this.fontCache[fontFamily]
+        val key = generateKey(fontFamily, fontWeight, fontStyle)
+        if (this.fontCache.containsKey(key)) {
+            Log.d("FastFontResolver", "cache hit for $fontFamily ($fontWeight, $fontStyle)")
+            return this.fontCache[key]
         }
 
         val fullPath = Paths.get(this._folder, fontFamily)
         Log.d("FastFontResolver", "caching $fontFamily ($fontWeight, $fontStyle) from $fullPath")
         try {
-            this.fontCache[fontFamily] = Typeface.createFromAsset(_context.assets, "$fullPath.ttf")
-            return this.fontCache[fontFamily]
+//            val typeface = Typeface.createFromAsset(_context.assets, "$fullPath.ttf")
+            val font = Font("$fullPath.ttf",_context.assets, FontWeight(fontWeight), if(isItalic(fontStyle)) FontStyle.Italic else FontStyle.Normal)
+            val family = FontFamily(font)
+            this.fontCache[key] = _fontFamilyResolver.resolve(family).value as Typeface
+            return this.fontCache[key]
         } catch (_: Exception) {
         }
 
@@ -175,11 +197,13 @@ suspend fun imageBitmapFromSvgAtScale(
             customCss.add("path { color: $color; }")
         }
 
-        // use custom font for all text items
+        // required to resolve SMuFL fonts (https://github.com/rism-digital/verovio/issues/4067)
         SVG.registerExternalFileResolver(fontResolver);
+
+        // use custom font for all text items
         svgConfig.customFont?.let { font ->
-            Log.d("SVG", "Using custom font: '$font'")
-            customCss.add("text { font-family: $font; }")
+            Log.d("SVG", "Using custom font: '${font.familyName}'")
+            customCss.add(".text {font-family:${font.familyName};}")
         }
 
         // merge and apply custom CSS styles
@@ -271,6 +295,7 @@ fun ScalableCachedSvgImage(
     initialOffset: Offset = Offset.Zero,
 ) {
     val context = LocalContext.current
+    val fontFamilyResolver = LocalFontFamilyResolver.current
     val coroutineScope = remember { CoroutineScope(Dispatchers.Main) }
 
     var baseSize by remember { mutableStateOf<Size?>(null) }
@@ -300,7 +325,7 @@ fun ScalableCachedSvgImage(
     val bitmapScale = SvgRenderResolutionMapping[settings.svgRenderResolution.collectAsState(initial = null).value] ?: 1f
 
     val fastFontResolver = remember(context) {
-        FastFontResolver(context, "fonts");
+        FastFontResolver(context, "fonts", fontFamilyResolver);
     }
 
     // Re-render with debouncing

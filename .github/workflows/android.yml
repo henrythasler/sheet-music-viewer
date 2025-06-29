@@ -210,7 +210,7 @@ jobs:
       id: get_release
       run: |
         release=$(gh api repos/${{ github.repository }}/releases/tags/${{ github.ref_name }})
-        release_body=$(echo "$release" | jq -r .body | sed ':a;N;$!ba;s/\n/\\n/g')
+        release_body=$(echo "$release" | jq -r .body)
         echo "release_body=$release_body" >> $GITHUB_OUTPUT
       env:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

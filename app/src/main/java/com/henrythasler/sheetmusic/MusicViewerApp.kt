@@ -10,6 +10,10 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -36,6 +40,18 @@ fun MusicViewerApp(
         LaunchedEffect(Unit) {
             viewModel.extractAssets(context)
             viewModel.getVerovioVersion()
+            SvgCustomFonts.forEach { (_, customFont) ->
+                if(customFont.path != null) {
+                    customFont.fontFamily = FontFamily(
+                        Font(
+                            path = customFont.path,
+                            assetManager = context.assets,
+                            weight = FontWeight.Normal,
+                            style = FontStyle.Normal,
+                        )
+                    )
+                }
+            }
         }
 
         CompositionLocalProvider(LocalSettingsViewModel provides settingsViewModel) {
@@ -52,6 +68,7 @@ fun MusicViewerApp(
                         uiState = viewModel.uiState.collectAsState().value,
                         meiAssetsFolder = viewModel.meiAssetsFolder.collectAsState().value,
                         readAssets = viewModel::readAssets,
+                        verovioVersion = viewModel.verovioVersion.value,
                     )
                 }
 
@@ -82,7 +99,8 @@ fun MusicViewerApp(
                         engraveMusicAsset = viewModel::engraveMusicAsset,
                         assetPath = assetPath,
                         initialScale = scale,
-                        initialOffset = Offset(offsetX, offsetY)
+                        initialOffset = Offset(offsetX, offsetY),
+                        verovioVersion = viewModel.verovioVersion.value,
                     )
                 }
 

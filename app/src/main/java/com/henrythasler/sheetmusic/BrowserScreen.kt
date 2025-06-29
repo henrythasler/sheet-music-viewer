@@ -148,7 +148,8 @@ fun BrowserScreen(
     onNavigateToNotation: (fileName: String) -> Unit = {},
     meiAssetsFolder: String? = null,
     uiState: AssetUiState,
-    readAssets: suspend(context: Context, newFolder: String?) -> Unit
+    readAssets: suspend(context: Context, newFolder: String?) -> Unit,
+    verovioVersion: String? = null,
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
@@ -162,6 +163,7 @@ fun BrowserScreen(
         topBar = {
             BrowserTopNavigationBar(
                 onNavigateBack = onNavigateBack,
+                verovioVersion = verovioVersion,
             )
         }
     ) { innerPadding ->
@@ -254,6 +256,7 @@ fun BrowserScreen(
 @Composable
 fun BrowserTopNavigationBar(
     onNavigateBack: () -> Unit,
+    verovioVersion: String? = null,
 ) {
     TopAppBar(
         colors = topAppBarColors(
@@ -263,7 +266,7 @@ fun BrowserTopNavigationBar(
         title = {
             Column {
                 Text(
-                    text = "Verovio Demo",
+                    text = "Example Browser",
                     style = MaterialTheme.typography.titleLarge
                 )
             }
@@ -282,13 +285,15 @@ fun BrowserTopNavigationBar(
             }
         },
         actions = {
-            BrowserActionMenu()
+            BrowserActionMenu(verovioVersion)
         },
     )
 }
 
 @Composable
-fun BrowserActionMenu() {
+fun BrowserActionMenu(
+    verovioVersion: String? = null,
+) {
     var expanded by remember { mutableStateOf(false) }
     val openAlertDialog = remember { mutableStateOf(false) }
 
@@ -310,7 +315,7 @@ fun BrowserActionMenu() {
     }
 
     if (openAlertDialog.value) {
-        AboutDialog(openAlertDialog)
+        AboutDialog(openAlertDialog, verovioVersion)
     }
 }
 
