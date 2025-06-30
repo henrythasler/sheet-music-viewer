@@ -3,6 +3,7 @@ package com.henrythasler.sheetmusic
 import android.content.Context
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.compositionLocalOf
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.text.font.FontFamily
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.*
@@ -58,6 +59,8 @@ class SettingsRepository(private val context: Context) {
         val SVG_RENDER_RESOLUTION = stringPreferencesKey("HIGH")
     }
 
+
+
     val svgOverrideFont: Flow<String?> = context.dataStore.data.map { preferences ->
         if(preferences[SVG_OVERRIDE_FONT] != "none") preferences[SVG_OVERRIDE_FONT] else null
     }
@@ -81,6 +84,10 @@ class SettingsRepository(private val context: Context) {
 class SettingsViewModel(private val repository: SettingsRepository) : ViewModel() {
     val svgOverrideFont = repository.svgOverrideFont
     val svgRenderResolution = repository.svgRenderResolution
+
+    // temporary settings
+    var currentOffset: Offset = Offset.Zero
+    var currentScale: Float = 1.0f
 
     fun updateSvgOverrideFont(name: String) {
         viewModelScope.launch {

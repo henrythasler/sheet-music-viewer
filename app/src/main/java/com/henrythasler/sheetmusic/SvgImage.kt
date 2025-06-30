@@ -303,14 +303,14 @@ fun ScalableCachedSvgImage(
     var viewportSize by remember { mutableStateOf(Size.Zero) }
 
     // State for transformations
-    var offset by remember { mutableStateOf(initialOffset) }
-    var scale by remember { mutableFloatStateOf(initialScale) }
+    var offset by remember { mutableStateOf(Offset.Zero) }
+    var scale by remember { mutableFloatStateOf(1.0f) }
 
     var renderOffset by remember { mutableStateOf(initialOffset) }
     var renderScale by remember { mutableFloatStateOf(initialScale) }
 
-    var overviewOffset by remember { mutableStateOf(Offset.Zero) }
-    var overviewScale by remember { mutableFloatStateOf(1f) }
+    var overviewOffset by remember { mutableStateOf(initialOffset) }
+    var overviewScale by remember { mutableFloatStateOf(initialScale) }
 
     var minScaleCurrent by remember { mutableFloatStateOf(canvasConfig.minScale) }
     var maxScaleCurrent by remember { mutableFloatStateOf(canvasConfig.maxScale) }
@@ -368,6 +368,9 @@ fun ScalableCachedSvgImage(
 
             overviewOffset = renderOffset
             overviewScale = renderScale
+
+            settings.currentOffset = renderOffset
+            settings.currentScale = renderScale
 
             // reset viewport transformation as the new bitmap already includes all transformations
             scale = 1f

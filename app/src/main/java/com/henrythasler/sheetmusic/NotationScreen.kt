@@ -68,8 +68,8 @@ fun NotationScreen(
     onNavigateToSettings: () -> Unit = {},
     engraveMusicAsset: suspend(context: Context, assetPath: String) -> String?,
     assetPath: String,
-    initialScale: Float = 1.0f,
-    initialOffset: Offset = Offset.Zero,
+    initialScale: Float? = null,
+    initialOffset: Offset? = null,
     verovioVersion: String? = null,
     ) {
     val context = LocalContext.current
@@ -158,8 +158,8 @@ fun NotationScreen(
                             panLimit = 0f,
                             canvasExtension = 800f
                         ),
-                        initialScale = initialScale,
-                        initialOffset = initialOffset,
+                        initialScale = settings.currentScale,
+                        initialOffset = settings.currentOffset,
                     )
                 }
             }

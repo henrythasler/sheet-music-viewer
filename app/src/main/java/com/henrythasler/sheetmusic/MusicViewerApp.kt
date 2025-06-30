@@ -55,6 +55,7 @@ fun MusicViewerApp(
         }
 
         CompositionLocalProvider(LocalSettingsViewModel provides settingsViewModel) {
+            val settings = useSettings()
             NavHost(
                 navController = navController,
                 startDestination = Screen.Home.route,
@@ -63,6 +64,8 @@ fun MusicViewerApp(
                     BrowserScreen(
                         onNavigateBack = { navController.popBackStack() },
                         onNavigateToNotation = { filename ->
+                            settings.currentOffset = Offset.Zero
+                            settings.currentScale = 1.0f
                             navController.navigate(Screen.Notation.createRoute(filename, 1.0f, Offset.Zero))
                         },
                         uiState = viewModel.uiState.collectAsState().value,
@@ -115,6 +118,8 @@ fun MusicViewerApp(
                         onNavigateBack = { navController.popBackStack() },
                         onNavigateToBrowser = { navController.navigate(Screen.Browser.route) },
                         onNavigateToNotation = { filename ->
+                            settings.currentOffset = Offset.Zero
+                            settings.currentScale = 1.0f
                             navController.navigate(Screen.Notation.createRoute(filename, 1.0f, Offset.Zero))
                                                },
                         onNavigateToSettings = { navController.navigate(Screen.Settings.route) },
