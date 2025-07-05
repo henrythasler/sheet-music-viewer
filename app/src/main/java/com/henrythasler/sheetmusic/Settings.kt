@@ -30,6 +30,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults.topAppBarColors
@@ -78,6 +79,8 @@ fun SettingsScreen(
     var fontScale = remember(svgFontScale) {
         svgFontScale.toFloat()
     }
+
+    val showDebugInfo by settings.showDebugInfo.collectAsState(initial = false)
 
     Scaffold(
         topBar = {
@@ -170,6 +173,34 @@ fun SettingsScreen(
                         style = MaterialTheme.typography.bodyLarge
                     )
                     BitmapQualitySelector()
+                }
+            }
+
+            Card(
+                modifier = Modifier
+//                .padding(16.dp)
+                    .fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                ),
+            ) {
+                Column(
+                    modifier = Modifier
+                        .padding(16.dp)
+                        .fillMaxWidth()
+                ) {
+                    Text(
+                        modifier = Modifier
+                            .padding(bottom = 16.dp),
+                        text = "Show Debug Information",
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                    Switch(
+                        checked = showDebugInfo,
+                        onCheckedChange = {
+                            settings.updateShowDebugInfo(it)
+                        }
+                    )
                 }
             }
         }

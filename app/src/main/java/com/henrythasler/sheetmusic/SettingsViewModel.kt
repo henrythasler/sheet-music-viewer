@@ -59,6 +59,7 @@ class SettingsRepository(private val context: Context) {
         val SVG_FONT_OVERRIDE = stringPreferencesKey("SVG_FONT_OVERRIDE")
         val SVG_RENDER_RESOLUTION = stringPreferencesKey("SVG_RENDER_RESOLUTION")
         val SVG_FONT_SCALE = floatPreferencesKey("SVG_FONT_SCALE")
+        val SHOW_DEBUG_INFO = booleanPreferencesKey("SHOW_DEBUG_INFO")
     }
 
     val svgFontOverride: Flow<String?> = context.dataStore.data.map { preferences ->
@@ -88,6 +89,16 @@ class SettingsRepository(private val context: Context) {
             preferences[SVG_RENDER_RESOLUTION] = value.name
         }
     }
+
+    val showDebugInfo: Flow<Boolean> = context.dataStore.data.map { preferences ->
+        preferences[SHOW_DEBUG_INFO] ?: false
+    }
+    suspend fun setShowDebugInfo(value: Boolean) {
+        context.dataStore.edit { preferences ->
+            Log.d("SettingsRepository", "$value")
+            preferences[SHOW_DEBUG_INFO] = value
+        }
+    }
 }
 
 
@@ -95,6 +106,7 @@ class SettingsViewModel(private val repository: SettingsRepository) : ViewModel(
     val svgFontOverride = repository.svgFontOverride
     val svgFontScale = repository.svgFontScale
     val svgRenderResolution = repository.svgRenderResolution
+    val showDebugInfo = repository.showDebugInfo
 
     // temporary settings
     var currentOffset: Offset = Offset.Zero
@@ -117,6 +129,13 @@ class SettingsViewModel(private val repository: SettingsRepository) : ViewModel(
             repository.setSvgRenderResolution(value)
         }
     }
+
+    fun updateShowDebugInfo(value: Boolean) {
+        viewModelScope.launch {
+            repository.setShowDebugInfo(value)
+        }
+    }
+
 }
 
 val LocalSettingsViewModel = compositionLocalOf<SettingsViewModel> {

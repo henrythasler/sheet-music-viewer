@@ -328,6 +328,8 @@ fun ScalableCachedSvgImage(
         FastFontResolver(context, "fonts", fontFamilyResolver);
     }
 
+    val showDebug by settings.showDebugInfo.collectAsState(initial = false)
+
     // Re-render with debouncing
     LaunchedEffect(renderOffset, renderScale, bitmapScale) {
         renderJob?.cancelAndJoin()
@@ -481,7 +483,9 @@ fun ScalableCachedSvgImage(
                 .drawWithCache {
                     onDrawWithContent {
                         // Viewport background
-                        drawRect(Color.Yellow.copy(alpha = 0.3f), Offset.Zero, viewportSize)
+                        if(showDebug) {
+                            drawRect(Color.Yellow.copy(alpha = 0.3f), Offset.Zero, viewportSize)
+                        }
 
                         overviewBitmap?.let { overview ->
                             val centeringX = (canvasSize.width - overview.width) / 2f
@@ -521,16 +525,23 @@ fun ScalableCachedSvgImage(
                 }
         ) {
         }
-        Column(
-            modifier = Modifier
-//                .paddingFromBaseline(top = 200.dp)
-                .background(Color.White.copy(alpha = 0.5f)),
-        ) {
-            Text(
+
+        if(showDebug) {
+            Column(
                 modifier = Modifier
-                    .padding(6.dp),
-                text = "$title\nViewport: $scale, $offset\nCanvas: $renderScale, $renderOffset\nOverview: $overviewScale, $overviewOffset\nBitmap: ${"%.0f".format(bitmapScale * 100)}% (${currentBitmap?.width}x${currentBitmap?.height}) ($renderTime ms)"
-            )
+//                .paddingFromBaseline(top = 200.dp)
+                    .background(Color.White.copy(alpha = 0.5f)),
+            ) {
+                Text(
+                    modifier = Modifier
+                        .padding(6.dp),
+                    text = "$title\nViewport: $scale, $offset\nCanvas: $renderScale, $renderOffset\nOverview: $overviewScale, $overviewOffset\nRender: ${
+                        "%.0f".format(
+                            bitmapScale * 100
+                        )
+                    }% (${currentBitmap?.width}x${currentBitmap?.height}) ($renderTime ms)"
+                )
+            }
         }
     }
 }

@@ -63,7 +63,6 @@ android {
         externalNativeBuild {
             cmake {
                 cppFlags += "-std=c++20"
-                cppFlags += "-llog"
             }
         }
 
