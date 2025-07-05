@@ -12,8 +12,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Card
@@ -37,7 +39,6 @@ import androidx.compose.material3.TopAppBarDefaults.topAppBarColors
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -74,13 +75,8 @@ fun SettingsScreen(
     onNavigateBack: () -> Unit = {},
 ) {
     val settings = useSettings()
-
-    val svgFontScale = settings.svgFontScale.collectAsState(initial = 0.8).value
-    var fontScale = remember(svgFontScale) {
-        svgFontScale.toFloat()
-    }
-
-    val showDebugInfo by settings.showDebugInfo.collectAsState(initial = false)
+    val svgFontScale by settings.svgFontScale.collectAsState()
+    val showDebugInfo by settings.showDebugInfo.collectAsState()
 
     Scaffold(
         topBar = {
@@ -90,11 +86,13 @@ fun SettingsScreen(
             )
         }
     ) { innerPadding ->
+        val scrollState = rememberScrollState()
         Column(
             modifier = Modifier
                 .background(MaterialTheme.colorScheme.surfaceVariant)
                 .fillMaxSize()
                 .padding(innerPadding)
+                .verticalScroll(scrollState)
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
@@ -141,15 +139,14 @@ fun SettingsScreen(
                         style = MaterialTheme.typography.bodyLarge
                     )
                     Slider(
-                        value = fontScale,
+                        value = svgFontScale,
                         steps = 9,
                         valueRange = 50f..150f,
                         onValueChange = {
-                            fontScale = it
                             settings.updateSvgFontScale(it)
                         }
                     )
-                    Text(text = "%.0f%%".format(fontScale))
+                    Text(text = "%.0f%%".format(svgFontScale))
                 }
             }
 
@@ -252,7 +249,7 @@ fun SettingsTopNavigationBar(
 @Composable
 fun BitmapQualitySelector(modifier: Modifier = Modifier){
     val settings = useSettings()
-    val svgRenderResolution by settings.svgRenderResolution.collectAsState(initial = SvgRenderResolutionEnum.HIGH)
+    val svgRenderResolution by settings.svgRenderResolution.collectAsState()
     val radioOptions = mapOf(
         "High" to SvgRenderResolutionEnum.HIGH,
         "Medium" to SvgRenderResolutionEnum.MEDIUM,
@@ -370,7 +367,7 @@ fun AdvancedFontPickerDropdown() {
     var expanded by remember { mutableStateOf(false) }
 
     val settings = useSettings()
-    val selectedCustomFont = settings.svgFontOverride.collectAsState(initial = SvgCustomFonts.keys.first()).value
+    val selectedCustomFont by settings.svgFontOverride.collectAsState()
     val customFont: CustomFont = remember(selectedCustomFont) {
         SvgCustomFonts[selectedCustomFont] ?: SvgCustomFonts.values.first()
     }

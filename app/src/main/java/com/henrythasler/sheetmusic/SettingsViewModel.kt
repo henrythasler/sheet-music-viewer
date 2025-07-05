@@ -12,10 +12,12 @@ import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-
-val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
 
 enum class SvgRenderResolutionEnum { LOW, MEDIUM, HIGH;
     companion object {
@@ -53,6 +55,8 @@ val SvgRenderResolutionMapping = mapOf(
     SvgRenderResolutionEnum.MEDIUM to 0.70710677f,    // 1/sqrt(2)
     SvgRenderResolutionEnum.LOW to 0.5f,
 )
+
+val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
 
 class SettingsRepository(private val context: Context) {
     companion object {
@@ -93,10 +97,9 @@ class SettingsRepository(private val context: Context) {
     val showDebugInfo: Flow<Boolean> = context.dataStore.data.map { preferences ->
         preferences[SHOW_DEBUG_INFO] ?: false
     }
-    suspend fun setShowDebugInfo(value: Boolean) {
+    suspend fun setShowDebugInfo(enabled: Boolean) {
         context.dataStore.edit { preferences ->
-            Log.d("SettingsRepository", "$value")
-            preferences[SHOW_DEBUG_INFO] = value
+            preferences[SHOW_DEBUG_INFO] = enabled
         }
     }
 }
@@ -104,9 +107,13 @@ class SettingsRepository(private val context: Context) {
 
 class SettingsViewModel(private val repository: SettingsRepository) : ViewModel() {
     val svgFontOverride = repository.svgFontOverride
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
     val svgFontScale = repository.svgFontScale
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 80f)
     val svgRenderResolution = repository.svgRenderResolution
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), SvgRenderResolutionEnum.HIGH)
     val showDebugInfo = repository.showDebugInfo
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
     // temporary settings
     var currentOffset: Offset = Offset.Zero
@@ -130,12 +137,11 @@ class SettingsViewModel(private val repository: SettingsRepository) : ViewModel(
         }
     }
 
-    fun updateShowDebugInfo(value: Boolean) {
+    fun updateShowDebugInfo(enabled: Boolean) {
         viewModelScope.launch {
-            repository.setShowDebugInfo(value)
+            repository.setShowDebugInfo(enabled)
         }
     }
-
 }
 
 val LocalSettingsViewModel = compositionLocalOf<SettingsViewModel> {
@@ -145,4 +151,13 @@ val LocalSettingsViewModel = compositionLocalOf<SettingsViewModel> {
 @Composable
 fun useSettings(): SettingsViewModel {
     return LocalSettingsViewModel.current
+}
+
+class SettingsViewModelFactory(
+    private val context: Context
+) : ViewModelProvider.Factory {
+    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+        val repo = SettingsRepository(context)
+        return SettingsViewModel(repo) as T
+    }
 }

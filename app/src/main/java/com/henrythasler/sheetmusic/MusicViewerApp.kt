@@ -14,6 +14,7 @@ import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -33,9 +34,9 @@ fun MusicViewerApp(
         val navController = rememberNavController()
         val viewModel = remember { VerovioViewModel() }
         val context = LocalContext.current
-        // Create repository and viewmodel directly
-        val settingsRepository = remember { SettingsRepository(context) }
-        val settingsViewModel = remember { SettingsViewModel(settingsRepository) }
+        val settingsViewModel: SettingsViewModel = viewModel(
+            factory = SettingsViewModelFactory(context)
+        )
 
         LaunchedEffect(Unit) {
             viewModel.extractAssets(context)
