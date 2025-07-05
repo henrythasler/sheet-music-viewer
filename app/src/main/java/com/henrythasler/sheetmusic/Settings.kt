@@ -29,12 +29,14 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults.topAppBarColors
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -70,6 +72,13 @@ import androidx.compose.ui.unit.sp
 fun SettingsScreen(
     onNavigateBack: () -> Unit = {},
 ) {
+    val settings = useSettings()
+
+    val svgFontScale = settings.svgFontScale.collectAsState(initial = 0.8).value
+    var fontScale = remember(svgFontScale) {
+        svgFontScale.toFloat()
+    }
+
     Scaffold(
         topBar = {
             SettingsTopNavigationBar(
@@ -107,6 +116,37 @@ fun SettingsScreen(
                         style = MaterialTheme.typography.bodyLarge
                     )
                     AdvancedFontPickerDropdown()
+                }
+            }
+
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                ),
+            ) {
+                Column(
+                    modifier = Modifier
+                        .padding(16.dp)
+                        .fillMaxWidth()
+                ) {
+                    Text(
+                        modifier = Modifier
+                            .padding(bottom = 16.dp),
+                        text = "SVG Font Scale",
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                    Slider(
+                        value = fontScale,
+                        steps = 7,
+                        valueRange = 0.4f..1.2f,
+                        onValueChange = {
+                            fontScale = it
+                            settings.updateSvgFontScale(it)
+                        }
+                    )
+                    Text(text = "%.1f".format(fontScale))
                 }
             }
 
@@ -299,7 +339,7 @@ fun AdvancedFontPickerDropdown() {
     var expanded by remember { mutableStateOf(false) }
 
     val settings = useSettings()
-    val selectedCustomFont = settings.svgOverrideFont.collectAsState(initial = SvgCustomFonts.keys.first()).value
+    val selectedCustomFont = settings.svgFontOverride.collectAsState(initial = SvgCustomFonts.keys.first()).value
     val customFont: CustomFont = remember(selectedCustomFont) {
         SvgCustomFonts[selectedCustomFont] ?: SvgCustomFonts.values.first()
     }
@@ -370,7 +410,7 @@ fun AdvancedFontPickerDropdown() {
                         )
                     },
                     onClick = {
-                        settings.updateSvgOverrideFont(key)
+                        settings.updateSvgFontOverride(key)
                         expanded = false
                     },
                     contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding

@@ -1,6 +1,7 @@
 package com.henrythasler.sheetmusic
 
 import android.content.Context
+import android.util.Log
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.ui.geometry.Offset
@@ -55,18 +56,27 @@ val SvgRenderResolutionMapping = mapOf(
 
 class SettingsRepository(private val context: Context) {
     companion object {
-        val SVG_OVERRIDE_FONT = stringPreferencesKey("Edwin-Roman")
-        val SVG_RENDER_RESOLUTION = stringPreferencesKey("HIGH")
+        val SVG_FONT_OVERRIDE = stringPreferencesKey("SVG_FONT_OVERRIDE")
+        val SVG_RENDER_RESOLUTION = stringPreferencesKey("SVG_RENDER_RESOLUTION")
+        val SVG_FONT_SCALE = floatPreferencesKey("SVG_FONT_SCALE")
     }
 
-
-
-    val svgOverrideFont: Flow<String?> = context.dataStore.data.map { preferences ->
-        if(preferences[SVG_OVERRIDE_FONT] != "none") preferences[SVG_OVERRIDE_FONT] else null
+    val svgFontOverride: Flow<String?> = context.dataStore.data.map { preferences ->
+        if(preferences[SVG_FONT_OVERRIDE] != "none") preferences[SVG_FONT_OVERRIDE] else null
     }
-    suspend fun setSvgOverrideFont(name: String) {
+    suspend fun setSvgFontOverride(name: String) {
         context.dataStore.edit { preferences ->
-            preferences[SVG_OVERRIDE_FONT] = name
+            preferences[SVG_FONT_OVERRIDE] = name
+        }
+    }
+
+    val svgFontScale: Flow<Float> = context.dataStore.data.map { preferences ->
+        preferences[SVG_FONT_SCALE] ?: 0.8f
+    }
+    suspend fun setSvgFontScale(value: Float) {
+        context.dataStore.edit { preferences ->
+            Log.d("SettingsRepository", "$value")
+            preferences[SVG_FONT_SCALE] = value
         }
     }
 
@@ -82,16 +92,23 @@ class SettingsRepository(private val context: Context) {
 
 
 class SettingsViewModel(private val repository: SettingsRepository) : ViewModel() {
-    val svgOverrideFont = repository.svgOverrideFont
+    val svgFontOverride = repository.svgFontOverride
+    val svgFontScale = repository.svgFontScale
     val svgRenderResolution = repository.svgRenderResolution
 
     // temporary settings
     var currentOffset: Offset = Offset.Zero
     var currentScale: Float = 1.0f
 
-    fun updateSvgOverrideFont(name: String) {
+    fun updateSvgFontOverride(name: String) {
         viewModelScope.launch {
-            repository.setSvgOverrideFont(name)
+            repository.setSvgFontOverride(name)
+        }
+    }
+
+    fun updateSvgFontScale(value: Float) {
+        viewModelScope.launch {
+            repository.setSvgFontScale(value)
         }
     }
 

@@ -36,6 +36,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -52,6 +53,10 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.last
 import kotlinx.coroutines.launch
 import kotlin.system.measureTimeMillis
 
@@ -78,17 +83,46 @@ fun NotationScreen(
     var engraveTimeMillis by remember { mutableLongStateOf(0L) }
 
     val settings = useSettings()
-    val selectedCustomFont = settings.svgOverrideFont.collectAsState(initial = null).value
+    val selectedCustomFont = settings.svgFontOverride.collectAsState(initial = null).value
     val customFont: CustomFont? = remember(selectedCustomFont) {
         SvgCustomFonts[selectedCustomFont]
     }
 
     val assetName = assetPath.substringAfterLast("/")
 
+    fun rescaleFont(input: String, scale: Float): String {
+        val regex = Regex("(?<=font-size=\")\\d+(?=[a-z]*\")")
+        val matches = regex.findAll(input).toList()
+        val output = StringBuilder()
+
+        var lastIndex = 0
+
+        for(match in matches) {
+            // Add text before the match
+            output.append(input.substring(lastIndex, match.range.first))
+
+            // Add the replacement
+            val fontSize = match.value.toFloat()
+            val replacement = "${(fontSize * scale).toInt()}"
+            output.append(replacement)
+
+            lastIndex = match.range.last + 1
+        }
+        // Add remaining text after last match
+        output.append(input.substring(lastIndex))
+        return output.toString()
+    }
+
     LaunchedEffect(Unit) {
         engraveTimeMillis = measureTimeMillis {
             svgDocument = engraveMusicAsset(context, assetPath)
 //            svgDocument = svgDocument?.replace(Regex("(?<=font-family:).*?(?=;)"), "OpenSans")
+
+            svgDocument?.let { doc ->
+                val scale = settings.svgFontScale.first()
+                svgDocument = rescaleFont(doc, scale)
+            }
+
             engravingState = if(svgDocument.isNullOrEmpty()) {
                 EngravingState.Error("Engraving failed!")
             }

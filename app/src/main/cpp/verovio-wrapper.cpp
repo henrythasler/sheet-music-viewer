@@ -45,17 +45,34 @@ Java_com_henrythasler_sheetmusic_VerovioViewModel_renderData(JNIEnv *env, jobjec
 
 //    __android_log_print(ANDROID_LOG_DEBUG, "Verovio", "%X %X %X %X", mei_data[0x422], mei_data[0x423], mei_data[0x424], mei_data[0x425]);
 
+//    std::string svg_data = tk.RenderData(mei_data, R"({
+//        "breaks": "auto",
+//        "adjustPageHeight": false,
+//        "adjustPageWidth": false,
+//        "smuflTextFont": "none",
+//        "header": "auto",
+//        "footer": "auto",
+//        "lyricSize": 4.5,
+//        "multiRestStyle": "block",
+//        "svgFormatRaw": true,
+//        "pageMarginLeft": 50,
+//        "pageMarginRight": 50,
+//        "pageMarginTop": 10,
+//        "pageMarginBottom": 10,
+//}
+//)");
+
+    // minimal size
     std::string svg_data = tk.RenderData(mei_data, R"({
         "breaks": "auto",
         "adjustPageHeight": true,
         "adjustPageWidth": true,
         "smuflTextFont": "none",
-        "header": "none",
+        "header": "auto",
         "footer": "none",
-        "lyricSize": 3,
+        "lyricSize": 4.5,
         "multiRestStyle": "block",
         "svgFormatRaw": true,
-        "header": "auto",
         "pageMarginLeft": 50,
         "pageMarginRight": 50,
         "pageMarginTop": 10,
