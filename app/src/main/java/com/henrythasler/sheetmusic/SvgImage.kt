@@ -108,7 +108,7 @@ class FastFontResolver(
     override fun resolveFont(fontFamily: String, fontWeight: Int, fontStyle: String): Typeface? {
         val key = generateKey(fontFamily, fontWeight, fontStyle)
         if (this.fontCache.containsKey(key)) {
-            Log.d("FastFontResolver", "cache hit for $fontFamily ($fontWeight, $fontStyle)")
+//            Log.d("FastFontResolver", "cache hit for $fontFamily ($fontWeight, $fontStyle)")
             return this.fontCache[key]
         }
 

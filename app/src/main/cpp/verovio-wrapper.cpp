@@ -1,5 +1,6 @@
 #include <jni.h>
 #include <string>
+#include <numeric>
 #include <android/log.h>
 
 #include "toolkit.h"
@@ -39,8 +40,22 @@ Java_com_henrythasler_sheetmusic_VerovioViewModel_setDataPath(JNIEnv *env, jobje
     env->ReleaseStringUTFChars(verovioDataPath, nativePath);
 }
 
+inline std::string joinStrings(std::vector<std::string> input, const std::string& separator) {
+    if(input.empty()) {
+        return "";
+    }
+    else if (input.size() == 1) {
+        return input.front();
+    }
+
+    std::stringstream out;
+    out << input.front();
+    for_each(input.begin() + 1, input.end(), [&out, &separator] (const std::string& element) { out << separator << element; });
+    return out.str();
+}
+
 extern "C" JNIEXPORT jstring JNICALL
-Java_com_henrythasler_sheetmusic_VerovioViewModel_renderData(JNIEnv *env, jobject thiz, jstring data) {
+Java_com_henrythasler_sheetmusic_VerovioViewModel_renderData(JNIEnv *env, jobject thiz, jstring data, float fontScale) {
     const char* mei_data = env->GetStringUTFChars(data, nullptr);
 
 //    __android_log_print(ANDROID_LOG_DEBUG, "Verovio", "%X %X %X %X", mei_data[0x422], mei_data[0x423], mei_data[0x424], mei_data[0x425]);
@@ -63,22 +78,53 @@ Java_com_henrythasler_sheetmusic_VerovioViewModel_renderData(JNIEnv *env, jobjec
 //)");
 
     // minimal size
-    std::string svg_data = tk.RenderData(mei_data, R"({
-        "breaks": "auto",
-        "adjustPageHeight": true,
-        "adjustPageWidth": true,
-        "smuflTextFont": "none",
-        "header": "auto",
-        "footer": "none",
-        "lyricSize": 4.5,
-        "multiRestStyle": "block",
-        "svgFormatRaw": true,
-        "pageMarginLeft": 50,
-        "pageMarginRight": 50,
-        "pageMarginTop": 10,
-        "pageMarginBottom": 10,
-}
-)");
+//    std::string options = "ss";
+
+    std::vector<std::string> jsonOptions;
+
+    jsonOptions.emplace_back(R"("smuflTextFont": "none")");
+    jsonOptions.emplace_back(R"("svgFormatRaw": true)");
+
+    jsonOptions.emplace_back(R"("header": "auto")");
+    jsonOptions.emplace_back(R"("footer": "none")");
+
+    jsonOptions.emplace_back(R"("breaks": "auto")");
+    jsonOptions.emplace_back(R"("adjustPageWidth": true)");
+    jsonOptions.emplace_back(R"("adjustPageHeight": true)");
+
+    jsonOptions.emplace_back(R"("pageMarginLeft": 50)");
+    jsonOptions.emplace_back(R"("pageMarginRight": 50)");
+    jsonOptions.emplace_back(R"("pageMarginTop": 10)");
+    jsonOptions.emplace_back(R"("pageMarginBottom": 10)");
+
+//    jsonOptions.emplace_back(R"("lyricSize": 4.5)");
+    jsonOptions.emplace_back(std::format("\"lyricSize\": {}", std::min(8.0, std::max(2.0, 4.5 * fontScale / 100.))));
+
+    jsonOptions.emplace_back(R"("lyricWordSpace": 4.0)");
+//    jsonOptions.emplace_back(std::format("\"lyricWordSpace\": {}", std::min(10.0, std::max(1.2, 6.0 * fontScale))));
+
+    jsonOptions.emplace_back(R"("multiRestStyle": "block")");
+
+    auto mergedJsonOptions = "{" + joinStrings(jsonOptions, ",") + "}";
+//    __android_log_print(ANDROID_LOG_DEBUG, "Verovio", "%s", mergedJsonOptions.c_str());
+    std::string svg_data = tk.RenderData(mei_data, mergedJsonOptions);
+
+//    std::string svg_data = tk.RenderData(mei_data, R"({
+//        "breaks": "auto",
+//        "adjustPageHeight": true,
+//        "adjustPageWidth": true,
+//        "smuflTextFont": "none",
+//        "header": "auto",
+//        "footer": "none",
+//        "lyricSize": 4.5,
+//        "multiRestStyle": "block",
+//        "svgFormatRaw": true,
+//        "pageMarginLeft": 50,
+//        "pageMarginRight": 50,
+//        "pageMarginTop": 10,
+//        "pageMarginBottom": 10,
+//}
+//)");
 
     // workaround for https://github.com/rism-digital/verovio/issues/4038
 //    replaceAll(svg_data,"overflow=\"inherit\"", "overflow=\"visible\"");

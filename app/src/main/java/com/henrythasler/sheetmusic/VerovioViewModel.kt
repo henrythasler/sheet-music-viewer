@@ -70,11 +70,11 @@ class VerovioViewModel : ViewModel() {
 //        }
 //    }
 
-    suspend fun engraveMusicAsset(context: Context, assetPath: String): String? = withContext(
+    suspend fun engraveMusicAsset(context: Context, assetPath: String, fontScale: Float): String? = withContext(
         Dispatchers.IO) {
         try {
             val encodedMusic = context.assets.open(assetPath).bufferedReader().use { it.readText() }
-            val svgData = renderData(encodedMusic)
+            val svgData = renderData(encodedMusic, fontScale)
             if(svgData.isNotEmpty()) {
                 return@withContext svgData
             }
@@ -159,7 +159,7 @@ class VerovioViewModel : ViewModel() {
         System.loadLibrary("sheetmusic")
     }
     private external fun getVersion(): String
-    private external fun renderData(data: String): String
+    private external fun renderData(data: String, fontScale: Float): String
     private external fun renderToTimemap(data: String): String
     private external fun setDataPath(path: String)
 }

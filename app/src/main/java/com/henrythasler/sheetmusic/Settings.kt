@@ -112,7 +112,7 @@ fun SettingsScreen(
                     Text(
                         modifier = Modifier
                             .padding(bottom = 16.dp),
-                        text = "SVG Font Override",
+                        text = "Font Override",
                         style = MaterialTheme.typography.bodyLarge
                     )
                     AdvancedFontPickerDropdown()
@@ -134,19 +134,19 @@ fun SettingsScreen(
                     Text(
                         modifier = Modifier
                             .padding(bottom = 16.dp),
-                        text = "SVG Font Scale",
+                        text = "Font Scale",
                         style = MaterialTheme.typography.bodyLarge
                     )
                     Slider(
                         value = fontScale,
-                        steps = 7,
-                        valueRange = 0.4f..1.2f,
+                        steps = 9,
+                        valueRange = 50f..150f,
                         onValueChange = {
                             fontScale = it
                             settings.updateSvgFontScale(it)
                         }
                     )
-                    Text(text = "%.1f".format(fontScale))
+                    Text(text = "%.0f%%".format(fontScale))
                 }
             }
 
@@ -166,7 +166,7 @@ fun SettingsScreen(
                     Text(
                         modifier = Modifier
                             .padding(bottom = 16.dp),
-                        text = "SVG Rendering Resolution",
+                        text = "Render Resolution",
                         style = MaterialTheme.typography.bodyLarge
                     )
                     BitmapQualitySelector()

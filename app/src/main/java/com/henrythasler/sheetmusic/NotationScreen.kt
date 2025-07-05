@@ -71,7 +71,7 @@ sealed class EngravingState {
 fun NotationScreen(
     onNavigateBack: () -> Unit = {},
     onNavigateToSettings: () -> Unit = {},
-    engraveMusicAsset: suspend(context: Context, assetPath: String) -> String?,
+    engraveMusicAsset: suspend(context: Context, assetPath: String, fontScale: Float) -> String?,
     assetPath: String,
     initialScale: Float? = null,
     initialOffset: Offset? = null,
@@ -115,13 +115,13 @@ fun NotationScreen(
 
     LaunchedEffect(Unit) {
         engraveTimeMillis = measureTimeMillis {
-            svgDocument = engraveMusicAsset(context, assetPath)
+            svgDocument = engraveMusicAsset(context, assetPath, settings.svgFontScale.first())
 //            svgDocument = svgDocument?.replace(Regex("(?<=font-family:).*?(?=;)"), "OpenSans")
 
-            svgDocument?.let { doc ->
-                val scale = settings.svgFontScale.first()
-                svgDocument = rescaleFont(doc, scale)
-            }
+//            svgDocument?.let { doc ->
+//                val scale = settings.svgFontScale.first()
+//                svgDocument = rescaleFont(doc, scale)
+//            }
 
             engravingState = if(svgDocument.isNullOrEmpty()) {
                 EngravingState.Error("Engraving failed!")
