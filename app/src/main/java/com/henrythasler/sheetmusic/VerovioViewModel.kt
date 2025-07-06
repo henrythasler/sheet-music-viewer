@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
+import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.io.IOException
 
@@ -87,17 +88,30 @@ class VerovioViewModel : ViewModel() {
     // Function to extract and load asset
     fun extractAssets(context: Context) {
         viewModelScope.launch {
-            val verovioDataPath = extractAssetsFromDirectory(context, "data")
+            val commitHash = BuildConfig.COMMIT_HASH
+            val verovioDataPath = "${context.filesDir.absolutePath}/data"
+
+            fun checkFileExists(path: String): Boolean {
+                return try {
+                    FileInputStream(path).use { true }
+                } catch (e: IOException) {
+                    false
+                }
+            }
+
+            val checkPointFile = "$verovioDataPath/$commitHash"
+            if(!checkFileExists(checkPointFile)) {
+                extractAssetsFromDirectory(context, "data", verovioDataPath)
+                FileOutputStream(checkPointFile).use { }
+            }
+
             Log.i("VerovioViewModel", "using path '$verovioDataPath'")
             setDataPath(verovioDataPath)
         }
     }
 
     // Extract all assets from a directory to internal storage
-    private fun extractAssetsFromDirectory(context: Context, directory: String): String {
-        val rootPath = context.filesDir.absolutePath +
-                (if (directory.isNotEmpty()) "/$directory" else "")
-
+    private fun extractAssetsFromDirectory(context: Context, directory: String, rootPath: String): String {
         try {
             val assetList = context.assets.list(directory) ?: return rootPath
 
@@ -119,7 +133,7 @@ class VerovioViewModel : ViewModel() {
                         extractAssetForNative(context, assetPath)
                     } else {
                         // It's a directory, recurse
-                        extractAssetsFromDirectory(context, assetPath)
+                        extractAssetsFromDirectory(context, assetPath, rootPath)
                     }
                 } catch (e: IOException) {
                     Log.e("AssetExtractor", "Failed to extract: $assetPath", e)

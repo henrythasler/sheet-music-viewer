@@ -76,7 +76,7 @@ class SettingsRepository(private val context: Context) {
     }
 
     val svgFontScale: Flow<Float> = context.dataStore.data.map { preferences ->
-        preferences[SVG_FONT_SCALE] ?: 0.8f
+        preferences[SVG_FONT_SCALE] ?: 80f
     }
     suspend fun setSvgFontScale(value: Float) {
         context.dataStore.edit { preferences ->

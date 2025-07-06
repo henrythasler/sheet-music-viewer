@@ -95,10 +95,10 @@ class FastFontResolver(
     private val _context: Context = context
     private val _folder: String = assetFolder
     private val _fontFamilyResolver: FontFamily.Resolver = fontFamilyResolver
-    private val fontCache = mutableMapOf<String, Typeface>()
+    private val fontCache = LruCache<Int, Typeface>(32)
 
-    private fun generateKey(fontFamily: String, fontWeight: Int, fontStyle: String): String {
-        return "$fontFamily-$fontWeight-$fontStyle"
+    private fun generateKey(fontFamily: String, fontWeight: Int, fontStyle: String): Int {
+        return "$fontFamily-$fontWeight-$fontStyle".hashCode()
     }
 
     private fun isItalic(fontStyle: String): Boolean {
@@ -107,31 +107,33 @@ class FastFontResolver(
 
     override fun resolveFont(fontFamily: String, fontWeight: Int, fontStyle: String): Typeface? {
         val key = generateKey(fontFamily, fontWeight, fontStyle)
-        if (this.fontCache.containsKey(key)) {
-//            Log.d("FastFontResolver", "cache hit for $fontFamily ($fontWeight, $fontStyle)")
-            return this.fontCache[key]
+        return fontCache[key] ?: run {
+
+            val fullPath = Paths.get(this._folder, fontFamily)
+            Log.d(
+                "FastFontResolver",
+                "caching $fontFamily ($fontWeight, $fontStyle) from $fullPath"
+            )
+
+            val fileExtensions = arrayOf("ttf", "otf")
+            for (extension in fileExtensions) {
+                try {
+                    val font = Font(
+                        "$fullPath.$extension",
+                        _context.assets,
+                        FontWeight(fontWeight),
+                        if (isItalic(fontStyle)) FontStyle.Italic else FontStyle.Normal
+                    )
+                    val family = FontFamily(font)
+                    val typeface = _fontFamilyResolver.resolve(family).value as Typeface
+                    this.fontCache.put(key, typeface)
+                    return typeface
+                } catch (_: Exception) {
+                }
+            }
+            Log.e("FastFontResolver", "Could not resolve $fontFamily ($fontWeight, $fontStyle)")
+            return null
         }
-
-        val fullPath = Paths.get(this._folder, fontFamily)
-        Log.d("FastFontResolver", "caching $fontFamily ($fontWeight, $fontStyle) from $fullPath")
-        try {
-//            val typeface = Typeface.createFromAsset(_context.assets, "$fullPath.ttf")
-            val font = Font("$fullPath.ttf",_context.assets, FontWeight(fontWeight), if(isItalic(fontStyle)) FontStyle.Italic else FontStyle.Normal)
-            val family = FontFamily(font)
-            this.fontCache[key] = _fontFamilyResolver.resolve(family).value as Typeface
-            return this.fontCache[key]
-        } catch (_: Exception) {
-        }
-
-        try {
-            this.fontCache[fontFamily] = Typeface.createFromAsset(_context.assets, "$fullPath.otf")
-            return this.fontCache[fontFamily]
-        } catch (_: Exception) {
-        }
-
-        Log.e("FastFontResolver", "Could not resolve $fontFamily ($fontWeight, $fontStyle)")
-
-        return null
     }
 }
 
