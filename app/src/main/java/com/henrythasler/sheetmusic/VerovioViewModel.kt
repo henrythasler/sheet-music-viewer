@@ -2,8 +2,6 @@ package com.henrythasler.sheetmusic
 
 import android.content.Context
 import android.util.Log
-import androidx.compose.runtime.State
-import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
@@ -16,15 +14,11 @@ import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.io.IOException
+import java.lang.Float.max
+import java.lang.Float.min
+import java.util.Locale
 
 class VerovioViewModel : ViewModel() {
-//    private val _svgData = MutableStateFlow("")
-//    val svgData = _svgData.asStateFlow()
-
-    private val _verovioVersion = mutableStateOf<String?>(null)
-    val verovioVersion: State<String?>
-        get() = _verovioVersion
-
     private val _uiState = MutableStateFlow<AssetUiState>(AssetUiState.Loading)
     val uiState: StateFlow<AssetUiState> = _uiState.asStateFlow()
 
@@ -50,10 +44,19 @@ class VerovioViewModel : ViewModel() {
         }
     }
 
-    fun getVerovioVersion() {
-        viewModelScope.launch {
-            _verovioVersion.value = getVersion()
+    fun getVerovioVersion(): String {
+        return tkGetVersion()
+    }
+
+    suspend fun loadData(data: String): Boolean = withContext(
+        Dispatchers.IO) {
+        try {
+            val res = tkLoadData(data)
+            return@withContext res
+        } catch (e: Exception) {
+            "Failed to load asset: ${e.localizedMessage}"
         }
+        return@withContext false
     }
 
 //    fun renderAsset(context: Context, assetPath: String) {
@@ -74,13 +77,63 @@ class VerovioViewModel : ViewModel() {
     suspend fun engraveMusicAsset(context: Context, assetPath: String, fontScale: Float): String? = withContext(
         Dispatchers.IO) {
         try {
-            val encodedMusic = context.assets.open(assetPath).bufferedReader().use { it.readText() }
-            val svgData = renderData(encodedMusic, fontScale)
+            val data = context.assets.open(assetPath).bufferedReader().use { it.readText() }
+            var tkOptions = emptyArray<String>()
+
+            tkOptions += "\"smuflTextFont\": \"none\""
+            tkOptions += "\"svgFormatRaw\": true"
+
+            tkOptions += "\"header\": \"auto\""
+            tkOptions += "\"footer\": \"none\""
+
+            tkOptions += "\"breaks\": \"auto\""
+            tkOptions += "\"adjustPageWidth\": true"
+            tkOptions += "\"adjustPageHeight\": true"
+
+            tkOptions += "\"pageMarginLeft\": 50"
+            tkOptions += "\"pageMarginRight\": 50"
+            tkOptions += "\"pageMarginTop\": 10"
+            tkOptions += "\"pageMarginBottom\": 10"
+
+            tkOptions += "\"lyricSize\": %f".format(Locale.US, min(8.0f, max(2.0f, 4.5f * fontScale)))
+            tkOptions += "\"lyricWordSpace\": 4.0"
+            tkOptions += "\"multiRestStyle\": \"block\""
+
+            if(!tkSetOptions(tkOptions))
+            {
+                return@withContext null
+            }
+
+            if(!tkLoadData(data)) {
+                return@withContext null
+            }
+
+            val svgData = tkRenderToSVG(1, false)
+//            val svgData = tkRenderData(encodedMusic, fontScale)
             if(svgData.isNotEmpty()) {
                 return@withContext svgData
             }
         } catch (e: Exception) {
             "Failed to load asset: ${e.localizedMessage}"
+        }
+        return@withContext null
+    }
+
+    suspend fun getTimemap(): String? = withContext(
+        Dispatchers.IO) {
+        try {
+            var tkOptions = emptyArray<String>()
+
+            tkOptions += "\"includeMeasures\": false"
+            tkOptions += "\"includeRests\": false"
+
+            val timemap = tkRenderToTimemap(tkOptions)
+//            val svgData = tkRenderData(encodedMusic, fontScale)
+            if(timemap.isNotEmpty()) {
+                return@withContext timemap
+            }
+        } catch (e: Exception) {
+            "Failed to generate Timemap: ${e.localizedMessage}"
         }
         return@withContext null
     }
@@ -106,7 +159,7 @@ class VerovioViewModel : ViewModel() {
             }
 
             Log.i("VerovioViewModel", "using path '$verovioDataPath'")
-            setDataPath(verovioDataPath)
+            tkSetResourcePath(verovioDataPath)
         }
     }
 
@@ -172,8 +225,12 @@ class VerovioViewModel : ViewModel() {
     init {
         System.loadLibrary("sheetmusic")
     }
-    private external fun getVersion(): String
-    private external fun renderData(data: String, fontScale: Float): String
-    private external fun renderToTimemap(data: String): String
-    private external fun setDataPath(path: String)
+    private external fun tkGetVersion(): String
+    private external fun tkSetResourcePath(path: String): Boolean
+    private external fun tkSetOptions(options: Array<String>): Boolean
+    private external fun tkLoadData(data: String): Boolean
+    private external fun tkRenderToSVG(pageNo: Int, xmlDeclaration: Boolean): String
+    private external fun tkRenderToTimemap(options: Array<String>): String
+
+    private external fun tkRenderData(data: String, fontScale: Float): String
 }

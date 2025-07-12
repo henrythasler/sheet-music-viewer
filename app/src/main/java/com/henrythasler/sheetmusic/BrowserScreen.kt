@@ -149,7 +149,6 @@ fun BrowserScreen(
     meiAssetsFolder: String? = null,
     uiState: AssetUiState,
     readAssets: suspend(context: Context, newFolder: String?) -> Unit,
-    verovioVersion: String? = null,
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
@@ -163,7 +162,6 @@ fun BrowserScreen(
         topBar = {
             BrowserTopNavigationBar(
                 onNavigateBack = onNavigateBack,
-                verovioVersion = verovioVersion,
             )
         }
     ) { innerPadding ->
@@ -256,7 +254,6 @@ fun BrowserScreen(
 @Composable
 fun BrowserTopNavigationBar(
     onNavigateBack: () -> Unit,
-    verovioVersion: String? = null,
 ) {
     TopAppBar(
         colors = topAppBarColors(
@@ -285,17 +282,16 @@ fun BrowserTopNavigationBar(
             }
         },
         actions = {
-            BrowserActionMenu(verovioVersion)
+            BrowserActionMenu()
         },
     )
 }
 
 @Composable
-fun BrowserActionMenu(
-    verovioVersion: String? = null,
-) {
+fun BrowserActionMenu() {
     var expanded by remember { mutableStateOf(false) }
     val openAlertDialog = remember { mutableStateOf(false) }
+    val settings = useSettings()
 
     IconButton(onClick = { expanded = !expanded }) {
         Icon(Icons.Default.MoreVert, contentDescription = "More options")
@@ -315,7 +311,7 @@ fun BrowserActionMenu(
     }
 
     if (openAlertDialog.value) {
-        AboutDialog(openAlertDialog, verovioVersion)
+        AboutDialog(openAlertDialog, settings.verovioVersion)
     }
 }
 

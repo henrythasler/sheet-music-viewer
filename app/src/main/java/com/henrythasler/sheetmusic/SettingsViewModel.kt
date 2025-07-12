@@ -76,7 +76,7 @@ class SettingsRepository(private val context: Context) {
     }
 
     val svgFontScale: Flow<Float> = context.dataStore.data.map { preferences ->
-        preferences[SVG_FONT_SCALE] ?: 80f
+        preferences[SVG_FONT_SCALE] ?: 1.0f
     }
     suspend fun setSvgFontScale(value: Float) {
         context.dataStore.edit { preferences ->
@@ -109,15 +109,16 @@ class SettingsViewModel(private val repository: SettingsRepository) : ViewModel(
     val svgFontOverride = repository.svgFontOverride
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
     val svgFontScale = repository.svgFontScale
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 80f)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 1.0f)
     val svgRenderResolution = repository.svgRenderResolution
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), SvgRenderResolutionEnum.HIGH)
     val showDebugInfo = repository.showDebugInfo
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
-    // temporary settings
+    // temporary settings and global objects
     var currentOffset: Offset = Offset.Zero
     var currentScale: Float = 1.0f
+    var verovioVersion: String = ""
 
     fun updateSvgFontOverride(name: String) {
         viewModelScope.launch {

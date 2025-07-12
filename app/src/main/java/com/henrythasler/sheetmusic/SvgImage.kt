@@ -290,6 +290,7 @@ suspend fun imageBitmapFromSvgAtScale(
 fun ScalableCachedSvgImage(
     title: String,
     svgDocument: String,
+    timemap: String,
     modifier: Modifier = Modifier,
     canvasConfig: CanvasConfig = CanvasConfig(),
     svgConfig: SvgConfig = SvgConfig(),

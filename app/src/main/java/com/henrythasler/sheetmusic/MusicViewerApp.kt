@@ -46,7 +46,9 @@ fun MusicViewerApp(
             }
             Log.d("STARTUP", "extractAssets in $renderTime ms")
 
-            viewModel.getVerovioVersion()
+            // read Verovio version information
+            settingsViewModel.verovioVersion = viewModel.getVerovioVersion()
+
             SvgCustomFonts.forEach { (_, customFont) ->
                 if(customFont.path != null) {
                     customFont.fontFamily = FontFamily(
@@ -78,7 +80,6 @@ fun MusicViewerApp(
                         uiState = viewModel.uiState.collectAsState().value,
                         meiAssetsFolder = viewModel.meiAssetsFolder.collectAsState().value,
                         readAssets = viewModel::readAssets,
-                        verovioVersion = viewModel.verovioVersion.value,
                     )
                 }
 
@@ -107,10 +108,10 @@ fun MusicViewerApp(
                         onNavigateBack = { navController.popBackStack() },
                         onNavigateToSettings = { navController.navigate(Screen.Settings.route) },
                         engraveMusicAsset = viewModel::engraveMusicAsset,
+                        getTimemap = viewModel::getTimemap,
                         assetPath = assetPath,
                         initialScale = scale,
                         initialOffset = Offset(offsetX, offsetY),
-                        verovioVersion = viewModel.verovioVersion.value,
                     )
                 }
 
@@ -130,7 +131,6 @@ fun MusicViewerApp(
                             navController.navigate(Screen.Notation.createRoute(filename, 1.0f, Offset.Zero))
                                                },
                         onNavigateToSettings = { navController.navigate(Screen.Settings.route) },
-                        verovioVersion = viewModel.verovioVersion.value,
                     )
                 }
             }

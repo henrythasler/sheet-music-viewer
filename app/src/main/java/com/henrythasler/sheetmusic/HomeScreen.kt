@@ -78,13 +78,10 @@ fun HomeScreen(
     onNavigateToBrowser: () -> Unit = {},
     onNavigateToSettings: () -> Unit = {},
     onNavigateToNotation: (fileName: String) -> Unit = {},
-    verovioVersion: String? = null,
 ) {
     Scaffold(
         topBar = {
-            HomeTopNavigationBar(
-                verovioVersion = verovioVersion,
-            )
+            HomeTopNavigationBar()
         }
     ) { innerPadding ->
         Column(
@@ -137,9 +134,9 @@ fun HomeScreen(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeTopNavigationBar(
-    verovioVersion: String?,
-) {
+fun HomeTopNavigationBar() {
+    val settings = useSettings()
+
     TopAppBar(
 //        modifier = Modifier.windowInsetsPadding(WindowInsets.safeDrawing),
         colors = topAppBarColors(
@@ -155,23 +152,23 @@ fun HomeTopNavigationBar(
                     style = MaterialTheme.typography.titleLarge
                 )
                 Text(
-                    text = if (verovioVersion != null) "using Verovio $verovioVersion" else "",
+                    text = settings.verovioVersion,
                     style = MaterialTheme.typography.titleSmall
                 )
             }
         },
         actions = {
-            HomeActionMenu(verovioVersion)
+            HomeActionMenu()
         },
     )
 }
 
 @Composable
 fun HomeActionMenu(
-    verovioVersion: String? = null,
 ) {
     var expanded by remember { mutableStateOf(false) }
     val openAlertDialog = remember { mutableStateOf(false) }
+    val settings = useSettings()
 
     IconButton(onClick = { expanded = !expanded }) {
         Icon(Icons.Default.MoreVert, contentDescription = "More options")
@@ -191,7 +188,7 @@ fun HomeActionMenu(
     }
 
     if (openAlertDialog.value) {
-        AboutDialog(openAlertDialog, verovioVersion)
+        AboutDialog(openAlertDialog, settings.verovioVersion)
     }
 }
 

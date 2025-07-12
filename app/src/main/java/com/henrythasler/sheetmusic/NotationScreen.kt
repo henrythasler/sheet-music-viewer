@@ -72,14 +72,15 @@ fun NotationScreen(
     onNavigateBack: () -> Unit = {},
     onNavigateToSettings: () -> Unit = {},
     engraveMusicAsset: suspend(context: Context, assetPath: String, fontScale: Float) -> String?,
+    getTimemap: suspend() -> String?,
     assetPath: String,
     initialScale: Float? = null,
     initialOffset: Offset? = null,
-    verovioVersion: String? = null,
     ) {
     val context = LocalContext.current
     var engravingState by remember { mutableStateOf<EngravingState>(EngravingState.Loading) }
     var svgDocument by remember { mutableStateOf<String?>(null) }
+    var timemap by remember { mutableStateOf("{}") }
     var engraveTimeMillis by remember { mutableLongStateOf(0L) }
 
     val settings = useSettings()
@@ -116,6 +117,7 @@ fun NotationScreen(
     LaunchedEffect(Unit) {
         engraveTimeMillis = measureTimeMillis {
             svgDocument = engraveMusicAsset(context, assetPath, settings.svgFontScale.first())
+            timemap = getTimemap() ?: "{}"
 //            svgDocument = svgDocument?.replace(Regex("(?<=font-family:).*?(?=;)"), "OpenSans")
 
 //            svgDocument?.let { doc ->
@@ -160,7 +162,6 @@ fun NotationScreen(
             onExportSvg = {
                 exportSvg.launch("$assetName.svg")
             },
-            verovioVersion = verovioVersion
         )
 
         when (engravingState) {
@@ -181,6 +182,7 @@ fun NotationScreen(
                             .fillMaxSize(),
                         title = "Engrave: $engraveTimeMillis ms (${svg.length / 1024} KiB)",
                         svgDocument = svg,
+                        timemap = timemap,
                         svgConfig = SvgConfig(
                             null,
                             customFont
@@ -236,7 +238,6 @@ fun NotationTopNavigationBar(
     onNavigateToSettings: () -> Unit = {},
     onExportSvg: () -> Unit = {},
     title: String = "Title",
-    verovioVersion: String? = null,
 ) {
     TopAppBar(
         colors = topAppBarColors(
@@ -270,7 +271,6 @@ fun NotationTopNavigationBar(
             NotationActionMenu(
                 onNavigateToSettings = onNavigateToSettings,
                 onExportSvg = onExportSvg,
-                verovioVersion = verovioVersion
             )
         },
     )
@@ -281,10 +281,10 @@ fun NotationTopNavigationBar(
 fun NotationActionMenu(
     onNavigateToSettings: () -> Unit = {},
     onExportSvg: () -> Unit = {},
-    verovioVersion: String? = null,
 ) {
     var expanded by remember { mutableStateOf(false) }
     val openAlertDialog = remember { mutableStateOf(false) }
+    val settings = useSettings()
 
     Row {
         IconButton(
@@ -330,6 +330,6 @@ fun NotationActionMenu(
     }
 
     if (openAlertDialog.value) {
-        AboutDialog(openAlertDialog, verovioVersion)
+        AboutDialog(openAlertDialog, settings.verovioVersion)
     }
 }

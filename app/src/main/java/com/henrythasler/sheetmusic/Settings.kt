@@ -139,14 +139,14 @@ fun SettingsScreen(
                         style = MaterialTheme.typography.bodyLarge
                     )
                     Slider(
-                        value = svgFontScale,
+                        value = svgFontScale * 100,
                         steps = 9,
                         valueRange = 50f..150f,
                         onValueChange = {
-                            settings.updateSvgFontScale(it)
+                            settings.updateSvgFontScale(it / 100.0f)
                         }
                     )
-                    Text(text = "%.0f%%".format(svgFontScale))
+                    Text(text = "%.0f%%".format(svgFontScale * 100))
                 }
             }
 
