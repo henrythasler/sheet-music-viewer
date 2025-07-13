@@ -122,6 +122,11 @@ Java_com_henrythasler_sheetmusic_VerovioViewModel_tkLoadData(JNIEnv *env, jobjec
     env->ReleaseStringUTFChars(data, utfData);
 }
 
+extern "C" JNIEXPORT jint JNICALL
+Java_com_henrythasler_sheetmusic_VerovioViewModel_tkGetPageCount(JNIEnv* env,jobject /* this */) {
+    return tk.GetPageCount();
+}
+
 extern "C" JNIEXPORT jstring JNICALL
 Java_com_henrythasler_sheetmusic_VerovioViewModel_tkRenderToSVG(JNIEnv *env, jobject thiz, int pageNo, jboolean xmlDeclaration) {
     return env->NewStringUTF(tk.RenderToSVG(pageNo, xmlDeclaration).c_str());

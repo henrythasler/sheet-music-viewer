@@ -34,7 +34,7 @@ fun MusicViewerApp(
 //                dynamicColor = false
     ) {
         val navController = rememberNavController()
-        val viewModel = remember { VerovioViewModel() }
+        val verovio = remember { VerovioViewModel() }
         val context = LocalContext.current
         val settingsViewModel: SettingsViewModel = viewModel(
             factory = SettingsViewModelFactory(context)
@@ -42,12 +42,12 @@ fun MusicViewerApp(
 
         LaunchedEffect(Unit) {
             val renderTime = measureTimeMillis {
-                viewModel.extractAssets(context)
+                verovio.extractAssets(context)
             }
             Log.d("STARTUP", "extractAssets in $renderTime ms")
 
             // read Verovio version information
-            settingsViewModel.verovioVersion = viewModel.getVerovioVersion()
+            settingsViewModel.verovioVersion = verovio.getVerovioVersion()
 
             SvgCustomFonts.forEach { (_, customFont) ->
                 if(customFont.path != null) {
@@ -77,9 +77,9 @@ fun MusicViewerApp(
                             settings.currentScale = 1.0f
                             navController.navigate(Screen.Notation.createRoute(filename, 1.0f, Offset.Zero))
                         },
-                        uiState = viewModel.uiState.collectAsState().value,
-                        meiAssetsFolder = viewModel.meiAssetsFolder.collectAsState().value,
-                        readAssets = viewModel::readAssets,
+                        uiState = verovio.uiState.collectAsState().value,
+                        meiAssetsFolder = verovio.meiAssetsFolder.collectAsState().value,
+                        readAssets = verovio::readAssets,
                     )
                 }
 
@@ -107,8 +107,7 @@ fun MusicViewerApp(
                     NotationScreen(
                         onNavigateBack = { navController.popBackStack() },
                         onNavigateToSettings = { navController.navigate(Screen.Settings.route) },
-                        engraveMusicAsset = viewModel::engraveMusicAsset,
-                        getTimemap = viewModel::getTimemap,
+                        verovio = verovio,
                         assetPath = assetPath,
                         initialScale = scale,
                         initialOffset = Offset(offsetX, offsetY),

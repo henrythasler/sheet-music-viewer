@@ -25,6 +25,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -36,7 +37,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -51,13 +52,13 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.last
 import kotlinx.coroutines.launch
+import kotlin.math.max
+import kotlin.math.min
 import kotlin.system.measureTimeMillis
 
 // UI state for the notation screen
@@ -71,17 +72,19 @@ sealed class EngravingState {
 fun NotationScreen(
     onNavigateBack: () -> Unit = {},
     onNavigateToSettings: () -> Unit = {},
-    engraveMusicAsset: suspend(context: Context, assetPath: String, fontScale: Float) -> String?,
-    getTimemap: suspend() -> String?,
+    verovio: VerovioViewModel,
     assetPath: String,
     initialScale: Float? = null,
     initialOffset: Offset? = null,
     ) {
     val context = LocalContext.current
+    var loadingState by remember { mutableStateOf<EngravingState>(EngravingState.Loading) }
     var engravingState by remember { mutableStateOf<EngravingState>(EngravingState.Loading) }
     var svgDocument by remember { mutableStateOf<String?>(null) }
     var timemap by remember { mutableStateOf("{}") }
     var engraveTimeMillis by remember { mutableLongStateOf(0L) }
+    var currentPage by remember { mutableIntStateOf(1) }
+    var pageCount by remember { mutableIntStateOf(1) }
 
     val settings = useSettings()
     val selectedCustomFont = settings.svgFontOverride.collectAsState(initial = null).value
@@ -116,15 +119,36 @@ fun NotationScreen(
 
     LaunchedEffect(Unit) {
         engraveTimeMillis = measureTimeMillis {
-            svgDocument = engraveMusicAsset(context, assetPath, settings.svgFontScale.first())
-            timemap = getTimemap() ?: "{}"
-//            svgDocument = svgDocument?.replace(Regex("(?<=font-family:).*?(?=;)"), "OpenSans")
+            if(verovio.loadMusicAsset(context, assetPath, settings.svgFontScale.first())) {
+                loadingState = EngravingState.Success
 
-//            svgDocument?.let { doc ->
-//                val scale = settings.svgFontScale.first()
-//                svgDocument = rescaleFont(doc, scale)
-//            }
+                svgDocument = verovio.engravePage(currentPage, false)
+                timemap = verovio.getTimemap() ?: "{}"
+                pageCount = verovio.getPageCount()
 
+                engravingState = if(svgDocument.isNullOrEmpty()) {
+                    EngravingState.Error("Loading failed!")
+                }
+                else {
+                    EngravingState.Success
+    //            svgDocument = svgDocument?.replace(Regex("(?<=font-family:).*?(?=;)"), "OpenSans")
+
+    //            svgDocument?.let { doc ->
+    //                val scale = settings.svgFontScale.first()
+    //                svgDocument = rescaleFont(doc, scale)
+    //            }
+                }
+            }
+            else {
+                loadingState = EngravingState.Error("Loading failed!")
+            }
+        }
+        Log.i("Verovio", "Engraving '$assetPath' took $engraveTimeMillis ms. (${svgDocument?.length} Bytes)")
+    }
+
+    LaunchedEffect(currentPage) {
+        if(loadingState == EngravingState.Success) {
+            svgDocument = verovio.engravePage(currentPage, false)
             engravingState = if(svgDocument.isNullOrEmpty()) {
                 EngravingState.Error("Engraving failed!")
             }
@@ -132,7 +156,6 @@ fun NotationScreen(
                 EngravingState.Success
             }
         }
-        Log.i("Verovio", "Engraving '$assetPath' took $engraveTimeMillis ms. (${svgDocument?.length} Bytes)")
     }
 
     val coroutineScope = remember { CoroutineScope(Dispatchers.IO) }
@@ -163,64 +186,93 @@ fun NotationScreen(
                 exportSvg.launch("$assetName.svg")
             },
         )
-
-        when (engravingState) {
-            is EngravingState.Loading -> {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+        ) {
+            when (engravingState) {
+                is EngravingState.Loading -> {
                     CircularProgressIndicator(
                         modifier = Modifier.align(Alignment.Center)
                     )
                 }
-            }
-            is EngravingState.Success -> {
-                svgDocument?.let { svg ->
-                    ScalableCachedSvgImage(
-                        modifier = Modifier
-                            .fillMaxSize(),
-                        title = "Engrave: $engraveTimeMillis ms (${svg.length / 1024} KiB)",
-                        svgDocument = svg,
-                        timemap = timemap,
-                        svgConfig = SvgConfig(
-                            null,
-                            customFont
-                        ),
-                        canvasConfig = CanvasConfig(
-                            minScale = 0.25f,
-                            maxScale = 32f,
-                            debounceDelayMs = 100L,
-                            panLimit = 0f,
-                            canvasExtension = 800f
-                        ),
-                        initialScale = settings.currentScale,
-                        initialOffset = settings.currentOffset,
-                    )
+
+                is EngravingState.Success -> {
+                    svgDocument?.let { svg ->
+                        ScalableCachedSvgImage(
+                            modifier = Modifier
+                                .fillMaxSize(),
+                            title = "Engrave: $engraveTimeMillis ms (${svg.length / 1024} KiB)",
+                            svgDocument = svg,
+                            timemap = timemap,
+                            svgConfig = SvgConfig(
+                                null,
+                                customFont
+                            ),
+                            canvasConfig = CanvasConfig(
+                                minScale = 0.25f,
+                                maxScale = 32f,
+                                debounceDelayMs = 100L,
+                                panLimit = 0f,
+                                canvasExtension = 800f
+                            ),
+                            initialScale = settings.currentScale,
+                            initialOffset = settings.currentOffset,
+                        )
+                    }
+
+                    if(currentPage > 1) {
+                        FloatingActionButton(
+                            modifier = Modifier.align(Alignment.CenterStart),
+                            onClick = {
+                                currentPage = max(currentPage - 1, 1)
+                            }
+                        ) {
+                            Icon(
+                                painter = painterResource(R.drawable.baseline_navigate_before_24),
+                                contentDescription = null
+                            )
+                        }
+                    }
+
+                    if(currentPage < pageCount) {
+                        FloatingActionButton(
+                            modifier = Modifier.align(Alignment.CenterEnd),
+                            onClick = {
+                                currentPage = min(currentPage + 1, pageCount)
+                            }
+                        ) {
+                            Icon(
+                                painter = painterResource(R.drawable.baseline_navigate_next_24),
+                                contentDescription = null
+                            )
+                        }
+                    }
                 }
-            }
-            is EngravingState.Error -> {
-                val errorMessage = (engravingState as EngravingState.Error).message
-                Column(
-                    modifier = Modifier
-                        .align(Alignment.CenterHorizontally)
-                        .padding(32.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Info,
-                        contentDescription = null,
-                        modifier = Modifier.size(64.dp),
-                        tint = Color.Red
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text(
-                        text = errorMessage,
-                        color = Color.Red,
-                        style = MaterialTheme.typography.headlineMedium,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.padding(16.dp)
-                    )
+
+                is EngravingState.Error -> {
+                    val errorMessage = (engravingState as EngravingState.Error).message
+                    Column(
+                        modifier = Modifier
+                            .align(Alignment.Center)
+                            .padding(32.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Info,
+                            contentDescription = null,
+                            modifier = Modifier.size(64.dp),
+                            tint = Color.Red
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            text = errorMessage,
+                            color = Color.Red,
+                            style = MaterialTheme.typography.headlineMedium,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.padding(16.dp)
+                        )
+                    }
                 }
             }
         }

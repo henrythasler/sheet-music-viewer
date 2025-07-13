@@ -152,6 +152,7 @@ jobs:
       with:
         path: |
           ${{ env.ANDROID_NDK_ROOT }}
+          ${{ env.ANDROID_NDK_HOME }}
         key: ${{ runner.os }}-ndk-r25c
         
     - name: Set NDK environment variables

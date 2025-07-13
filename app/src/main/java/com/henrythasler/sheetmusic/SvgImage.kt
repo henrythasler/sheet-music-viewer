@@ -333,8 +333,16 @@ fun ScalableCachedSvgImage(
 
     val showDebug by settings.showDebugInfo.collectAsState(initial = false)
 
+    LaunchedEffect(svgDocument) {
+        overviewBitmap = null
+
+        // reset transformations
+        renderScale = 1f
+        renderOffset = Offset.Zero
+    }
+
     // Re-render with debouncing
-    LaunchedEffect(renderOffset, renderScale, bitmapScale) {
+    LaunchedEffect(renderOffset, renderScale, bitmapScale, svgDocument) {
         renderJob?.cancelAndJoin()
 
         // Start new render job with debounce

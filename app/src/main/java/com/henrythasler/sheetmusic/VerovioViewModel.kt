@@ -48,6 +48,10 @@ class VerovioViewModel : ViewModel() {
         return tkGetVersion()
     }
 
+    fun getPageCount(): Int {
+        return tkGetPageCount()
+    }
+
     suspend fun loadData(data: String): Boolean = withContext(
         Dispatchers.IO) {
         try {
@@ -74,7 +78,7 @@ class VerovioViewModel : ViewModel() {
 //        }
 //    }
 
-    suspend fun engraveMusicAsset(context: Context, assetPath: String, fontScale: Float): String? = withContext(
+    suspend fun loadMusicAsset(context: Context, assetPath: String, fontScale: Float): Boolean = withContext(
         Dispatchers.IO) {
         try {
             val data = context.assets.open(assetPath).bufferedReader().use { it.readText() }
@@ -101,15 +105,24 @@ class VerovioViewModel : ViewModel() {
 
             if(!tkSetOptions(tkOptions))
             {
-                return@withContext null
+                return@withContext false
             }
 
             if(!tkLoadData(data)) {
-                return@withContext null
+                return@withContext false
             }
 
-            val svgData = tkRenderToSVG(1, false)
-//            val svgData = tkRenderData(encodedMusic, fontScale)
+            return@withContext true
+        } catch (e: Exception) {
+            "Failed to load asset: ${e.localizedMessage}"
+        }
+        return@withContext false
+    }
+
+    suspend fun engravePage(pageNo: Int, xmlDeclaration: Boolean = false): String? = withContext(
+        Dispatchers.IO) {
+        try {
+            val svgData = tkRenderToSVG(pageNo, xmlDeclaration)
             if(svgData.isNotEmpty()) {
                 return@withContext svgData
             }
@@ -226,6 +239,7 @@ class VerovioViewModel : ViewModel() {
         System.loadLibrary("sheetmusic")
     }
     private external fun tkGetVersion(): String
+    private external fun tkGetPageCount(): Int
     private external fun tkSetResourcePath(path: String): Boolean
     private external fun tkSetOptions(options: Array<String>): Boolean
     private external fun tkLoadData(data: String): Boolean
