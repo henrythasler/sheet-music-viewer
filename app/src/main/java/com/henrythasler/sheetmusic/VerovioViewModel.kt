@@ -132,7 +132,7 @@ class VerovioViewModel : ViewModel() {
         return@withContext null
     }
 
-    suspend fun getTimemap(): String? = withContext(
+    suspend fun getTimemap(): Array<TimemapItem>? = withContext(
         Dispatchers.IO) {
         try {
             var tkOptions = emptyArray<String>()
@@ -140,9 +140,9 @@ class VerovioViewModel : ViewModel() {
             tkOptions += "\"includeMeasures\": false"
             tkOptions += "\"includeRests\": false"
 
-            val timemap = tkRenderToTimemap(tkOptions)
-//            val svgData = tkRenderData(encodedMusic, fontScale)
-            if(timemap.isNotEmpty()) {
+            val timemapJson = tkRenderToTimemap(tkOptions)
+            if(timemapJson.isNotEmpty()) {
+                val timemap = emptyArray<TimemapItem>() //Json.decodeFromString<Array<TimemapItem>>(timemapJson)
                 return@withContext timemap
             }
         } catch (e: Exception) {

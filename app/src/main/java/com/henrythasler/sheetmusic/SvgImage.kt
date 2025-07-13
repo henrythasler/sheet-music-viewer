@@ -102,7 +102,7 @@ class FastFontResolver(
     }
 
     private fun isItalic(fontStyle: String): Boolean {
-        return(fontStyle == "Italic")
+        return (fontStyle == "Italic")
     }
 
     override fun resolveFont(fontFamily: String, fontWeight: Int, fontStyle: String): Typeface? {
@@ -110,25 +110,26 @@ class FastFontResolver(
         return fontCache[key] ?: run {
 
             val fullPath = Paths.get(this._folder, fontFamily)
-            Log.d(
-                "FastFontResolver",
-                "caching $fontFamily ($fontWeight, $fontStyle) from $fullPath"
-            )
+            Log.d("FastFontResolver", "caching $fontFamily ($fontWeight, $fontStyle) from $fullPath")
 
             val fileExtensions = arrayOf("ttf", "otf")
             for (extension in fileExtensions) {
-                try {
-                    val font = Font(
-                        "$fullPath.$extension",
-                        _context.assets,
-                        FontWeight(fontWeight),
-                        if (isItalic(fontStyle)) FontStyle.Italic else FontStyle.Normal
-                    )
-                    val family = FontFamily(font)
-                    val typeface = _fontFamilyResolver.resolve(family).value as Typeface
-                    this.fontCache.put(key, typeface)
-                    return typeface
-                } catch (_: Exception) {
+                val assetList = _context.assets.list(this._folder) ?: emptyArray<String>()
+                if("$fontFamily.$extension" in assetList) {
+                    try {
+                        val font = Font(
+                            "$fullPath.$extension",
+                            _context.assets,
+                            FontWeight(fontWeight),
+                            if (isItalic(fontStyle)) FontStyle.Italic else FontStyle.Normal
+                        )
+                        val family = FontFamily(font)
+                        val typeface = _fontFamilyResolver.resolve(family).value as Typeface
+                        this.fontCache.put(key, typeface)
+                        return typeface
+                    } catch (e: Exception) {
+                        Log.e("FastFontResolver", e.toString())
+                    }
                 }
             }
             Log.e("FastFontResolver", "Could not resolve $fontFamily ($fontWeight, $fontStyle)")
@@ -221,7 +222,7 @@ suspend fun imageBitmapFromSvgAtScale(
         val canvas = picture.beginRecording(
             ((canvasSize.width + 2 * canvasConfig.canvasExtension) * bitmapScale).toInt(),
             ((canvasSize.height + 2 * canvasConfig.canvasExtension) * bitmapScale).toInt()
-            )
+        )
 
         // Calculate initial scale to fit and center the SVG into the canvas
         val scaleX = canvasSize.width / svgSize.width
@@ -245,7 +246,7 @@ suspend fun imageBitmapFromSvgAtScale(
         background.alpha = 0x80
 //        canvas.drawRect(0f, 0f, canvas.width.toFloat(), canvas.height.toFloat(), background)
 
-        
+
         // Apply the offset and scale to the canvas
         // This allows us to pan and zoom the SVG
         canvas.translate(offset.x * bitmapScale, offset.y * bitmapScale)
@@ -290,7 +291,7 @@ suspend fun imageBitmapFromSvgAtScale(
 fun ScalableCachedSvgImage(
     title: String,
     svgDocument: String,
-    timemap: String,
+    timemap: Array<TimemapItem>,
     modifier: Modifier = Modifier,
     canvasConfig: CanvasConfig = CanvasConfig(),
     svgConfig: SvgConfig = SvgConfig(),
@@ -325,7 +326,9 @@ fun ScalableCachedSvgImage(
     var renderTime by remember { mutableLongStateOf(0L) }
 
     val settings = useSettings()
-    val bitmapScale = SvgRenderResolutionMapping[settings.svgRenderResolution.collectAsState(initial = null).value] ?: 1f
+    val bitmapScale =
+        SvgRenderResolutionMapping[settings.svgRenderResolution.collectAsState(initial = null).value]
+            ?: 1f
 
     val fastFontResolver = remember(context) {
         FastFontResolver(context, "fonts", fontFamilyResolver);
@@ -361,7 +364,7 @@ fun ScalableCachedSvgImage(
                     canvasConfig = canvasConfig,
                     fontResolver = fastFontResolver
                 )
-                if(overviewBitmap == null) {
+                if (overviewBitmap == null) {
                     overviewBitmap = if (renderScale.equals(1.0f) && renderOffset == Offset.Zero) {
                         currentBitmap
                     } else {
@@ -494,7 +497,7 @@ fun ScalableCachedSvgImage(
                 .drawWithCache {
                     onDrawWithContent {
                         // Viewport background
-                        if(showDebug) {
+                        if (showDebug) {
                             drawRect(Color.Yellow.copy(alpha = 0.3f), Offset.Zero, viewportSize)
                         }
 
@@ -502,7 +505,10 @@ fun ScalableCachedSvgImage(
                             val centeringX = (canvasSize.width - overview.width) / 2f
                             val centeringY = (canvasSize.height - overview.height) / 2f
                             withTransform({
-                                translate(centeringX + overviewOffset.x, centeringY + overviewOffset.y)
+                                translate(
+                                    centeringX + overviewOffset.x,
+                                    centeringY + overviewOffset.y
+                                )
                                 scale(
                                     1 / bitmapScale * overviewScale,
                                     1 / bitmapScale * overviewScale,
@@ -537,7 +543,7 @@ fun ScalableCachedSvgImage(
         ) {
         }
 
-        if(showDebug) {
+        if (showDebug) {
             Column(
                 modifier = Modifier
 //                .paddingFromBaseline(top = 200.dp)

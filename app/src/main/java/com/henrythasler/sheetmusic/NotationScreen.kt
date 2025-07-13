@@ -81,7 +81,7 @@ fun NotationScreen(
     var loadingState by remember { mutableStateOf<EngravingState>(EngravingState.Loading) }
     var engravingState by remember { mutableStateOf<EngravingState>(EngravingState.Loading) }
     var svgDocument by remember { mutableStateOf<String?>(null) }
-    var timemap by remember { mutableStateOf("{}") }
+    var timemap by remember { mutableStateOf<Array<TimemapItem>>(emptyArray()) }
     var engraveTimeMillis by remember { mutableLongStateOf(0L) }
     var currentPage by remember { mutableIntStateOf(1) }
     var pageCount by remember { mutableIntStateOf(1) }
@@ -123,7 +123,7 @@ fun NotationScreen(
                 loadingState = EngravingState.Success
 
                 svgDocument = verovio.engravePage(currentPage, false)
-                timemap = verovio.getTimemap() ?: "{}"
+                timemap = verovio.getTimemap() ?: emptyArray<TimemapItem>()
                 pageCount = verovio.getPageCount()
 
                 engravingState = if(svgDocument.isNullOrEmpty()) {
