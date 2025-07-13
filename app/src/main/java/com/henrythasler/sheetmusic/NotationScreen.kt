@@ -124,6 +124,8 @@ fun NotationScreen(
 
                 svgDocument = verovio.engravePage(currentPage, false)
                 timemap = verovio.getTimemap() ?: emptyArray<TimemapItem>()
+                val last = timemap.takeLast(3)
+                Log.i("Verovio", "Timemap (${timemap.size} Items): $last")
                 pageCount = verovio.getPageCount()
 
                 engravingState = if(svgDocument.isNullOrEmpty()) {

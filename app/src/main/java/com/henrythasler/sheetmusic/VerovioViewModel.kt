@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.json.Json
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
@@ -140,13 +141,12 @@ class VerovioViewModel : ViewModel() {
             tkOptions += "\"includeMeasures\": false"
             tkOptions += "\"includeRests\": false"
 
-            val timemapJson = tkRenderToTimemap(tkOptions)
-            if(timemapJson.isNotEmpty()) {
-                val timemap = emptyArray<TimemapItem>() //Json.decodeFromString<Array<TimemapItem>>(timemapJson)
-                return@withContext timemap
+            val timemap = tkRenderToTimemap(tkOptions)
+            if(timemap.isNotEmpty()) {
+                return@withContext Json.decodeFromString<Array<TimemapItem>>(timemap)
             }
         } catch (e: Exception) {
-            "Failed to generate Timemap: ${e.localizedMessage}"
+            Log.e("VerovioViewModel", "${e.localizedMessage}")
         }
         return@withContext null
     }
