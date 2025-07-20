@@ -15,7 +15,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -44,6 +43,8 @@ val SvgCustomFonts = mapOf(
     "none" to CustomFont("off (use system font)"),
     "Edwin-Roman" to CustomFont("Edwin Roman", "Edwin-Roman", "fonts/Edwin-Roman.otf"),
     "Edwin-Italic" to CustomFont("Edwin Italic", "Edwin-Italic", "fonts/Edwin-Italic.otf"),
+    "EBGaramond" to CustomFont("EB Garamond", "EBGaramond", "fonts/EBGaramond.ttf"),
+    "EBGaramond-Italic" to CustomFont("EB Garamond Italic", "EBGaramond-Italic", "fonts/EBGaramond-Italic.ttf"),
     "OpenSans" to CustomFont("Open Sans", "OpenSans", "fonts/OpenSans.ttf"),
     "OpenSans-Italic" to CustomFont("Open Sans Italic", "OpenSans-Italic", "fonts/OpenSans-Italic.ttf"),
     "OpenSans-Light" to CustomFont("Open Sans Light", "OpenSans-Light", "fonts/OpenSans-Light.ttf"),
@@ -62,7 +63,8 @@ class SettingsRepository(private val context: Context) {
     companion object {
         val SVG_FONT_OVERRIDE = stringPreferencesKey("SVG_FONT_OVERRIDE")
         val SVG_RENDER_RESOLUTION = stringPreferencesKey("SVG_RENDER_RESOLUTION")
-        val SVG_FONT_SCALE = floatPreferencesKey("SVG_FONT_SCALE")
+        val VRV_LYRIC_SIZE_SCALE = floatPreferencesKey("VRV_LYRIC_SIZE_SCALE")
+        val VRV_LYRIC_WORD_SPACE_SCALE = floatPreferencesKey("VRV_LYRIC_WORD_SPACE_SCALE")
         val SHOW_DEBUG_INFO = booleanPreferencesKey("SHOW_DEBUG_INFO")
     }
 
@@ -75,13 +77,23 @@ class SettingsRepository(private val context: Context) {
         }
     }
 
-    val svgFontScale: Flow<Float> = context.dataStore.data.map { preferences ->
-        preferences[SVG_FONT_SCALE] ?: 1.0f
+    val vrvLyricSizeScale: Flow<Float> = context.dataStore.data.map { preferences ->
+        preferences[VRV_LYRIC_SIZE_SCALE] ?: 0.8f
     }
-    suspend fun setSvgFontScale(value: Float) {
+    suspend fun setVrvLyricSizeScale(value: Float) {
         context.dataStore.edit { preferences ->
             Log.d("SettingsRepository", "$value")
-            preferences[SVG_FONT_SCALE] = value
+            preferences[VRV_LYRIC_SIZE_SCALE] = value
+        }
+    }
+
+    val vrvLyricWordSpaceScale: Flow<Float> = context.dataStore.data.map { preferences ->
+        preferences[VRV_LYRIC_WORD_SPACE_SCALE] ?: 4.0f
+    }
+    suspend fun setVrvLyricWordSpaceScale(value: Float) {
+        context.dataStore.edit { preferences ->
+            Log.d("SettingsRepository", "$value")
+            preferences[VRV_LYRIC_WORD_SPACE_SCALE] = value
         }
     }
 
@@ -107,13 +119,15 @@ class SettingsRepository(private val context: Context) {
 
 class SettingsViewModel(private val repository: SettingsRepository) : ViewModel() {
     val svgFontOverride = repository.svgFontOverride
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
-    val svgFontScale = repository.svgFontScale
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 1.0f)
+        .stateIn(viewModelScope, SharingStarted.Eagerly, null)
     val svgRenderResolution = repository.svgRenderResolution
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), SvgRenderResolutionEnum.HIGH)
+        .stateIn(viewModelScope, SharingStarted.Eagerly, SvgRenderResolutionEnum.HIGH)
+    val vrvLyricSizeScale = repository.vrvLyricSizeScale
+        .stateIn(viewModelScope, SharingStarted.Eagerly, 0.8f)
+    val vrvLyricWordSpaceScale = repository.vrvLyricWordSpaceScale
+        .stateIn(viewModelScope, SharingStarted.Eagerly, 4.0f)
     val showDebugInfo = repository.showDebugInfo
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+        .stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
     // temporary settings and global objects
     var currentOffset: Offset = Offset.Zero
@@ -126,9 +140,15 @@ class SettingsViewModel(private val repository: SettingsRepository) : ViewModel(
         }
     }
 
-    fun updateSvgFontScale(value: Float) {
+    fun updateVrvLyricSizeScale(value: Float) {
         viewModelScope.launch {
-            repository.setSvgFontScale(value)
+            repository.setVrvLyricSizeScale(value)
+        }
+    }
+
+    fun updateVrvLyricWordSpaceScale(value: Float) {
+        viewModelScope.launch {
+            repository.setVrvLyricWordSpaceScale(value)
         }
     }
 

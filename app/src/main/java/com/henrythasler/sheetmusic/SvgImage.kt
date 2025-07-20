@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -340,8 +341,8 @@ fun ScalableCachedSvgImage(
         overviewBitmap = null
 
         // reset transformations
-        renderScale = 1f
-        renderOffset = Offset.Zero
+//        renderScale = 1f
+//        renderOffset = Offset.Zero
     }
 
     // Re-render with debouncing
@@ -413,7 +414,7 @@ fun ScalableCachedSvgImage(
     Box(
         modifier = modifier
             .clipToBounds()
-            .background(Color.Magenta.copy(alpha = 0.1f))
+            .background(MaterialTheme.colorScheme.surfaceVariant)
             .pointerInput(Unit) {
                 detectTapGestures(
                     onDoubleTap = {
@@ -498,7 +499,7 @@ fun ScalableCachedSvgImage(
                     onDrawWithContent {
                         // Viewport background
                         if (showDebug) {
-                            drawRect(Color.Yellow.copy(alpha = 0.3f), Offset.Zero, viewportSize)
+                            drawRect(Color.Magenta.copy(alpha = 0.1f), Offset.Zero, viewportSize)
                         }
 
                         overviewBitmap?.let { overview ->

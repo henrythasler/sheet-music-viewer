@@ -43,14 +43,12 @@ see [latest release](https://github.com/henrythasler/verovio-demo-app/releases/l
 
 ## Feature Roadmap
 
-1. Fix Nav-Graph ⏳
-2. Limit panning and zooming to reasonable values ⏳
-3. New Color Palette (yellow/orange) ⏳
-4. Permanent Low-Res SVG bitmap overlay ✅
+1. Limit panning and zooming to reasonable values ⏳
+2. New Color Palette (yellow/orange) ⏳
 
 ## Known Issues
 
-- In App `build.gradle.kts`: Cmake requires additional `cppFlags += "-llog"` to avoid linker errors for Android log output which in turn generates a ton of warnings during the compile step.
+none
 
 ## Resources
 

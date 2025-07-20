@@ -1,6 +1,5 @@
 package com.henrythasler.sheetmusic
 
-import android.content.Context
 import android.net.Uri
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -52,7 +51,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
@@ -119,7 +117,12 @@ fun NotationScreen(
 
     LaunchedEffect(Unit) {
         engraveTimeMillis = measureTimeMillis {
-            if(verovio.loadMusicAsset(context, assetPath, settings.svgFontScale.first())) {
+            if(verovio.loadMusicAsset(
+                    context = context,
+                    assetPath = assetPath,
+                    lyricSizeScale = settings.vrvLyricSizeScale.first(),
+                    lyricWordSpaceScale = settings.vrvLyricWordSpaceScale.first(),
+            )) {
                 loadingState = EngravingState.Success
 
                 svgDocument = verovio.engravePage(currentPage, false)

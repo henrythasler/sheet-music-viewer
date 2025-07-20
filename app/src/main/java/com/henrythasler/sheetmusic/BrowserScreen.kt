@@ -73,6 +73,7 @@ data class AssetItem(
 enum class AssetFileType {
     //    FOLDER,
     MEI,
+    MUSICXML,
     OTHER
 }
 
@@ -83,7 +84,7 @@ object AssetUtils {
 //        if (fileName.isNotEmpty()) return AssetFileType.FOLDER
 
         return when (fileName.substringAfterLast(".", "").lowercase()) {
-//            "xml", "musicxml" -> AssetFileType.MUSICXML
+            "xml", "musicxml" -> AssetFileType.MUSICXML
             "mei" -> AssetFileType.MEI
             else -> AssetFileType.OTHER
         }
@@ -376,13 +377,23 @@ fun AssetGridItem(
                     when (AssetUtils.getFileType(assetItem.name)) {
                         AssetFileType.MEI -> {
                             Icon(
-                                painter = painterResource(R.drawable.mei_logo_simple_light),//Icons.Default.CheckCircle,
+                                painter = painterResource(R.drawable.mei_logo_simple_light),
                                 contentDescription = null,
                                 modifier = Modifier
                                     .size(40.dp)
                                     .weight(1f)
                                     .align(Alignment.CenterHorizontally),
-//                            tint = Color(0xFF4285F4)
+                            )
+                        }
+
+                        AssetFileType.MUSICXML -> {
+                            Icon(
+                                painter = painterResource(R.drawable.baseline_code_24),
+                                contentDescription = null,
+                                modifier = Modifier
+                                    .size(40.dp)
+                                    .weight(1f)
+                                    .align(Alignment.CenterHorizontally),
                             )
                         }
 

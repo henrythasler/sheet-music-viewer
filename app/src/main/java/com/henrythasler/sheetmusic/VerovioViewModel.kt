@@ -79,7 +79,7 @@ class VerovioViewModel : ViewModel() {
 //        }
 //    }
 
-    suspend fun loadMusicAsset(context: Context, assetPath: String, fontScale: Float): Boolean = withContext(
+    suspend fun loadMusicAsset(context: Context, assetPath: String, lyricSizeScale: Float = 1.0f, lyricWordSpaceScale: Float = 1.0f): Boolean = withContext(
         Dispatchers.IO) {
         try {
             val data = context.assets.open(assetPath).bufferedReader().use { it.readText() }
@@ -100,8 +100,8 @@ class VerovioViewModel : ViewModel() {
             tkOptions += "\"pageMarginTop\": 10"
             tkOptions += "\"pageMarginBottom\": 10"
 
-            tkOptions += "\"lyricSize\": %f".format(Locale.US, min(8.0f, max(2.0f, 4.5f * fontScale)))
-            tkOptions += "\"lyricWordSpace\": 4.0"
+            tkOptions += "\"lyricSize\": %f".format(Locale.US, min(8.0f, max(2.0f, 4.5f * lyricSizeScale)))
+            tkOptions += "\"lyricWordSpace\": %f".format(Locale.US, min(10.0f, max(0.0f, 1.2f * lyricWordSpaceScale)))
             tkOptions += "\"multiRestStyle\": \"block\""
 
             if(!tkSetOptions(tkOptions))

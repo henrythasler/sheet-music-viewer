@@ -76,7 +76,8 @@ fun SettingsScreen(
     onNavigateBack: () -> Unit = {},
 ) {
     val settings = useSettings()
-    val svgFontScale by settings.svgFontScale.collectAsState()
+    val vrvLyricSizeScale by settings.vrvLyricSizeScale.collectAsState()
+    val vrvLyricWordSpaceScale by settings.vrvLyricWordSpaceScale.collectAsState()
     val showDebugInfo by settings.showDebugInfo.collectAsState()
 
     Scaffold(
@@ -140,14 +141,44 @@ fun SettingsScreen(
                         style = MaterialTheme.typography.bodyLarge
                     )
                     Slider(
-                        value = svgFontScale * 100,
+                        value = vrvLyricSizeScale * 100,
                         steps = 9,
                         valueRange = 50f..150f,
                         onValueChange = {
-                            settings.updateSvgFontScale(it / 100.0f)
+                            settings.updateVrvLyricSizeScale(it / 100.0f)
                         }
                     )
-                    Text(text = "%.0f%%".format(svgFontScale * 100))
+                    Text(text = "%.0f%%".format(vrvLyricSizeScale * 100))
+                }
+            }
+
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                ),
+            ) {
+                Column(
+                    modifier = Modifier
+                        .padding(16.dp)
+                        .fillMaxWidth()
+                ) {
+                    Text(
+                        modifier = Modifier
+                            .padding(bottom = 16.dp),
+                        text = "Lyric Spacing",
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                    Slider(
+                        value = vrvLyricWordSpaceScale * 100,
+                        steps = 14,
+                        valueRange = 50f..800f,
+                        onValueChange = {
+                            settings.updateVrvLyricWordSpaceScale(it / 100.0f)
+                        }
+                    )
+                    Text(text = "%.0f%%".format(vrvLyricWordSpaceScale * 100))
                 }
             }
 
