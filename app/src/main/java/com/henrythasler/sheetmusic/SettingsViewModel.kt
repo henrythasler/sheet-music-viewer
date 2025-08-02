@@ -41,6 +41,7 @@ data class CustomFont(
 // Define your custom font families
 val SvgCustomFonts = mapOf(
     "none" to CustomFont("off (use system font)"),
+    "Liberation-Serif" to CustomFont("Liberation Serif", "LiberationSerif-Regular", "fonts/LiberationSerif-Regular.ttf"),
     "Edwin-Roman" to CustomFont("Edwin Roman", "Edwin-Roman", "fonts/Edwin-Roman.otf"),
     "Edwin-Italic" to CustomFont("Edwin Italic", "Edwin-Italic", "fonts/Edwin-Italic.otf"),
     "EBGaramond" to CustomFont("EB Garamond", "EBGaramond", "fonts/EBGaramond.ttf"),

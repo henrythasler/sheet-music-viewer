@@ -211,7 +211,7 @@ suspend fun imageBitmapFromSvgAtScale(
         }
 
         // merge and apply custom CSS styles
-        if (customCss.size > 0) {
+        if (customCss.isNotEmpty()) {
             renderOptions.css(customCss.joinToString(" "))
         }
 

@@ -205,6 +205,7 @@ fun FavouritesRow(
         listOf(
             MeiItem("mei/chord/chord-005.mei", "chord-005.mei"),
             MeiItem("mei/tempo/tempo-003.mei", "tempo-003.mei"),
+            MeiItem("mei/lyric/lyric-002.mei", "lyric-002.mei"),
             MeiItem("mei/symbol/symbol-002.mei", "symbol-002.mei"),
             MeiItem("mei/lyric/lyric-004.mei", "lyric-004.mei"),
             MeiItem("mei/arpeg/arpeg-001.mei", "arpeg-001.mei"),
@@ -262,6 +263,7 @@ fun FavouritesCarousel() {
         listOf(
             MeiItem("mei/tempo/tempo-003.mei", "tempo-003.mei"),
             MeiItem("mei/chord/chord-005.mei", "chord-005.mei"),
+            MeiItem("mei/lyric/lyric-002.mei", "lyric-002.mei"),
             MeiItem("mei/lyric/lyric-004.mei", "lyric-004.mei"),
             MeiItem("mei/arpeg/arpeg-001.mei", "arpeg-001.mei"),
             MeiItem("mei/Costeley_Je_vois_de_glissantes_eaux.mei", "Costeley_Je_vois_de_glissantes_eaux.mei"),

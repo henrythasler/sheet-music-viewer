@@ -126,6 +126,9 @@ fun NotationScreen(
                 loadingState = EngravingState.Success
 
                 svgDocument = verovio.engravePage(currentPage, false)
+//                svgDocument = svgDocument?.replace(Regex("(?<=font-family:).*?(?=;)"), "LiberationSerif-Regular")
+//                Log.d("SVG", "$svgDocument")
+
                 timemap = verovio.getTimemap() ?: emptyArray<TimemapItem>()
                 val last = timemap.takeLast(3)
                 Log.i("Verovio", "Timemap (${timemap.size} Items): $last")
@@ -136,7 +139,7 @@ fun NotationScreen(
                 }
                 else {
                     EngravingState.Success
-    //            svgDocument = svgDocument?.replace(Regex("(?<=font-family:).*?(?=;)"), "OpenSans")
+//                svgDocument = svgDocument?.replace(Regex("(?<=font-family:).*?(?=;)"), "OpenSans")
 
     //            svgDocument?.let { doc ->
     //                val scale = settings.svgFontScale.first()
