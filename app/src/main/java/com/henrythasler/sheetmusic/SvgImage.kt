@@ -61,6 +61,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.nio.file.Paths
+import kotlin.io.path.name
 import kotlin.system.measureTimeMillis
 
 /**
@@ -102,34 +103,70 @@ class FastFontResolver(
         return "$fontFamily-$fontWeight-$fontStyle".hashCode()
     }
 
-    private fun isItalic(fontStyle: String): Boolean {
-        return (fontStyle == "Italic")
+    private fun getWeightName(fontWeight: Int): Array<String> {
+        // Map font weights to common naming conventions
+        return when {
+            fontWeight <= 200 -> arrayOf("", "Thin", "ExtraLight", "UltraLight")
+            fontWeight <= 300 -> arrayOf("", "Light")
+            fontWeight <= 400 -> arrayOf("", "Regular", "Normal", "Roman")
+            fontWeight <= 500 -> arrayOf("", "Medium")
+            fontWeight <= 600 -> arrayOf("", "SemiBold", "DemiBold")
+            fontWeight <= 700 -> arrayOf("", "Bold", "")
+            fontWeight <= 800 -> arrayOf("", "ExtraBold", "UltraBold")
+            else -> arrayOf("Black", "Heavy", "")
+        }
+    }
+
+    private fun getStyleName(fontStyle: String?): Array<String> {
+        return when (fontStyle?.lowercase()) {
+            "italic" -> arrayOf("Italic", "It", "")
+            "oblique" -> arrayOf("Oblique", "Italic", "It", "")
+            else -> arrayOf("")
+        }
+    }
+
+    private fun getFontStyle(fontStyle: String?): FontStyle {
+        return when (fontStyle?.lowercase()) {
+            "italic" -> FontStyle.Italic
+            else -> FontStyle.Normal
+        }
     }
 
     override fun resolveFont(fontFamily: String, fontWeight: Int, fontStyle: String): Typeface? {
         val key = generateKey(fontFamily, fontWeight, fontStyle)
         return fontCache[key] ?: run {
 
-            val fullPath = Paths.get(this._folder, fontFamily)
-            Log.d("FastFontResolver", "caching $fontFamily ($fontWeight, $fontStyle) from $fullPath")
+            val assets = _context.assets
+            val assetList = assets.list(this._folder) ?: emptyArray<String>()
 
-            val fileExtensions = arrayOf("ttf", "otf")
-            for (extension in fileExtensions) {
-                val assetList = _context.assets.list(this._folder) ?: emptyArray<String>()
-                if("$fontFamily.$extension" in assetList) {
-                    try {
-                        val font = Font(
-                            "$fullPath.$extension",
-                            _context.assets,
-                            FontWeight(fontWeight),
-                            if (isItalic(fontStyle)) FontStyle.Italic else FontStyle.Normal
-                        )
-                        val family = FontFamily(font)
-                        val typeface = _fontFamilyResolver.resolve(family).value as Typeface
-                        this.fontCache.put(key, typeface)
-                        return typeface
-                    } catch (e: Exception) {
-                        Log.e("FastFontResolver", e.toString())
+            val extensions = arrayOf(".ttf", ".otf")
+            val weightNames = getWeightName(fontWeight)
+            val styleNames = getStyleName(fontStyle)
+
+            for (ext in extensions) {
+                for (weight in weightNames) {
+                    for (style in styleNames) {
+                        val variant = "$weight$style"
+                        val filename = "$fontFamily${if(variant.isEmpty()) "" else "-$variant"}$ext"
+                        val fullPath = Paths.get(this._folder, filename)
+//                        Log.d("FastFontResolver", "trying $fontFamily ($fontWeight, $fontStyle) from $fullPath")
+                        if (filename in assetList) {
+                            Log.i("FastFontResolver", "caching $fontFamily ($fontWeight, $fontStyle) from $fullPath")
+                            try {
+                                val font = Font(
+                                    fullPath.toString(),
+                                    assets,
+                                    FontWeight(fontWeight),
+                                    getFontStyle(style)
+                                )
+                                val family = FontFamily(font)
+                                val typeface = _fontFamilyResolver.resolve(family).value as Typeface
+                                this.fontCache.put(key, typeface)
+                                return typeface
+                            } catch (e: Exception) {
+                                Log.e("FastFontResolver", e.toString())
+                            }
+                        }
                     }
                 }
             }

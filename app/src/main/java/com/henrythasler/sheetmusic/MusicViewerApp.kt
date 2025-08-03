@@ -50,10 +50,10 @@ fun MusicViewerApp(
             settingsViewModel.verovioVersion = verovio.getVerovioVersion()
 
             SvgCustomFonts.forEach { (_, customFont) ->
-                if(customFont.path != null) {
+                if(customFont.previewPath != null) {
                     customFont.fontFamily = FontFamily(
                         Font(
-                            path = customFont.path,
+                            path = customFont.previewPath,
                             assetManager = context.assets,
                             weight = FontWeight.Normal,
                             style = FontStyle.Normal,

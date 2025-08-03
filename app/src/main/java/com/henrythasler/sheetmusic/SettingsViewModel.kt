@@ -34,22 +34,20 @@ enum class SvgRenderResolutionEnum { LOW, MEDIUM, HIGH;
 data class CustomFont(
     val description: String,    // shown in the UI
     val familyName: String? = null, // used in SVG
-    val path: String? = null,   // used to load from assets
+    val previewPath: String? = null,   // used to load from assets
     var fontFamily: FontFamily? = null, // used in the font resolver
 )
 
 // Define your custom font families
 val SvgCustomFonts = mapOf(
     "none" to CustomFont("off (use system font)"),
-    "Liberation-Serif" to CustomFont("Liberation Serif", "LiberationSerif-Regular", "fonts/LiberationSerif-Regular.ttf"),
-    "Edwin-Roman" to CustomFont("Edwin Roman", "Edwin-Roman", "fonts/Edwin-Roman.otf"),
-    "Edwin-Italic" to CustomFont("Edwin Italic", "Edwin-Italic", "fonts/Edwin-Italic.otf"),
-    "EBGaramond" to CustomFont("EB Garamond", "EBGaramond", "fonts/EBGaramond.ttf"),
-    "EBGaramond-Italic" to CustomFont("EB Garamond Italic", "EBGaramond-Italic", "fonts/EBGaramond-Italic.ttf"),
+    "Liberation-Serif" to CustomFont("Liberation Serif", "LiberationSerif", "fonts/LiberationSerif-Regular.ttf"),
+    "Liberation-Sans" to CustomFont("Liberation Sans", "LiberationSans", "fonts/LiberationSans-Regular.ttf"),
+    "Liberation-Mono" to CustomFont("Liberation Mono", "LiberationMono", "fonts/LiberationMono-Regular.ttf"),
     "OpenSans" to CustomFont("Open Sans", "OpenSans", "fonts/OpenSans.ttf"),
-    "OpenSans-Italic" to CustomFont("Open Sans Italic", "OpenSans-Italic", "fonts/OpenSans-Italic.ttf"),
-    "OpenSans-Light" to CustomFont("Open Sans Light", "OpenSans-Light", "fonts/OpenSans-Light.ttf"),
-    "OpenSans-CondLight" to CustomFont("Open Sans Condensed Light", "OpenSans-CondLight", "fonts/OpenSans-CondLight.ttf"),
+    "OpenSans_Condensed" to CustomFont("Open Sans Condensed", "OpenSans_Condensed", "fonts/OpenSans_Condensed-Regular.ttf"),
+    "EBGaramond" to CustomFont("EB Garamond", "EBGaramond", "fonts/EBGaramond-Regular.ttf"),
+    "Edwin" to CustomFont("Edwin", "Edwin", "fonts/Edwin-Roman.otf"),
 )
 
 val SvgRenderResolutionMapping = mapOf(
